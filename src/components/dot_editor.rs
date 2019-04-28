@@ -1,3 +1,4 @@
+use crate::components::float_field_set::FloatFieldSet;
 use crate::fig::dot::Dot;
 use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRender};
 
@@ -53,17 +54,18 @@ impl Component for DotEditor {
             }),
         };
 
-        true
+        false // update given in onChange in parent state
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
+        let should_render = props.dot != self.dot;
         self.dot = props.dot;
         self.on_updated = match props.on_updated {
             Some(x) => x,
             None => panic!("on_updated must be specified"),
         };
 
-        true
+        return should_render;
     }
 }
 
@@ -71,109 +73,28 @@ impl Renderable<DotEditor> for DotEditor {
     fn view(&self) -> Html<Self> {
         return html! {
             <form class="dot-editor",>
-                <DotFieldSet:
+                <FloatFieldSet:
                     human_name="Circle Radius",
                     input_name="circle_radius",
                     value={self.dot.circle_radius},
+                    max={10.0},
                     on_input=|new_val| DotEditorMsg::CircleRadiusChange(new_val),
                 />
-                <DotFieldSet:
+                <FloatFieldSet:
                     human_name="Ring Radius",
                     input_name="ring_radius",
                     value={self.dot.ring_radius},
+                    max={10.0},
                     on_input=|new_val| DotEditorMsg::RingRadiusChange(new_val),
                 />
-                <DotFieldSet:
+                <FloatFieldSet:
                     human_name="Ring Stoke Width",
                     input_name="ring_stroke_width",
                     value={self.dot.ring_stroke_width},
+                    max={10.0},
                     on_input=|new_val| DotEditorMsg::RingStrokeWidthChange(new_val),
                 />
             </form>
-        };
-    }
-}
-
-struct DotFieldSet {
-    human_name: String,
-    input_name: String,
-    value: f64,
-    on_input: Callback<f64>,
-}
-
-#[derive(Default, PartialEq, Clone)]
-struct DotFieldSetProps {
-    human_name: String,
-    input_name: String,
-    value: f64,
-    on_input: Option<Callback<f64>>,
-}
-
-enum DotFieldSetMessage {
-    Changed(f64),
-}
-
-impl Component for DotFieldSet {
-    type Message = DotFieldSetMessage;
-    type Properties = DotFieldSetProps;
-
-    fn create(props: Self::Properties, _: ComponentLink<Self>) -> Self {
-        DotFieldSet {
-            human_name: props.human_name,
-            input_name: props.input_name,
-            value: props.value,
-            on_input: match props.on_input {
-                Some(x) => x,
-                None => panic!("on_input must be specified"),
-            },
-        }
-    }
-
-    fn change(&mut self, props: Self::Properties) -> bool {
-        self.human_name = props.human_name;
-        self.input_name = props.input_name;
-        self.value = props.value;
-        self.on_input = match props.on_input {
-            Some(x) => x,
-            None => panic!("on_input must be specified"),
-        };
-
-        return true;
-    }
-
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        match msg {
-            DotFieldSetMessage::Changed(v) => self.on_input.emit(v),
-        };
-
-        true
-    }
-}
-
-impl Renderable<DotFieldSet> for DotFieldSet {
-    fn view(&self) -> Html<DotFieldSet> {
-        return html! {
-            <>
-                <label>{&self.human_name}</label>
-                <input
-                    name={&self.input_name},
-                    type="range",
-                    step="0.1",
-                    min="0.0",
-                    max="10.0",
-                    value={self.value},
-                    oninput=|e| DotFieldSetMessage::Changed(e.value.parse().unwrap()),
-                    />
-                <input
-                    name={&self.input_name},
-                    type="number",
-                    step="0.1",
-                    min="0.0",
-                    max="10.0",
-                    value={self.value},
-                    oninput=|e| DotFieldSetMessage::Changed(e.value.parse().unwrap()),
-                    />
-            </>
         };
     }
 }

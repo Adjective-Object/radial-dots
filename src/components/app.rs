@@ -1,4 +1,4 @@
-use crate::components::dot_editor::DotEditor;
+use crate::components::{arc_style_editor::ArcStyleEditor, dot_editor::DotEditor};
 use crate::drawing_style::DrawingStyle;
 use crate::fig::diagram::Diagram;
 use crate::fig::dot::Dot;
@@ -148,14 +148,17 @@ impl Renderable<App> for App {
                 {dots_diagram_view(self)}
                 <div class="control-bar",>
                     <textarea
-                        onchange=|e| AppMsg::UpdateDiagramText(match e {
-                            ChangeData::Value(v) => v,
-                            _ => panic!("no Value in textarea onChange")
-                        }),>
+                        oninput=|e| AppMsg::UpdateDiagramText(e.value),>
                         {App::get_paths_as_multiline_text(
                             &self.diagram.paths,
                         )}
                     </textarea>
+                    <h2>{"Defaults"}</h2>
+                    <h3>{"Arc Style"}</h3>
+                    <ArcStyleEditor:
+                        arc_style={self.style.default_arc_style.clone()},
+                        on_updated=|arc| AppMsg::UpdateDefaultArcStyle(arc),
+                        />
                     <h3>{"One Dot"}</h3>
                     <DotEditor:
                         dot={self.style.default_one_dot_style.clone()},

@@ -11,8 +11,7 @@ use crate::utf_to_binary::text_to_binary;
 //     fn log(s: &str);
 // }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct ArcStyle {
     pub radius: f64,
     pub arc_percentage: f64,
@@ -67,7 +66,7 @@ impl<'style_and_self_lifetime> TextPath {
             + fmax(
                 &one_dot_style.get_bounding_radius(),
                 &zero_dot_style.get_bounding_radius(),
-            ) / 2.0;
+            ) * 2.0;
     }
 }
 
