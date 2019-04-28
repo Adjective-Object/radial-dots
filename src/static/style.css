@@ -25,6 +25,7 @@ html {
   background-color: #222222;
   font-family: sans-serif;
   padding: 1em;
+  overflow-y: auto;
 }
 
 input[type="number"],
@@ -57,21 +58,21 @@ input[type="color"] {
 
 /* Dot editor */
 
-.dot-editor {
+.fieldset {
   padding-bottom: 1em;
   font-size: 0.6em;
 }
 
-.dot-editor label {
+.fieldset label {
   display: block;
 }
 
-.dot-editor input[type="range"] {
+.fieldset input[type="range"] {
   width: 60%;
   margin-right: 10%;
 }
 
-.dot-editor input[type="range"] + input[type="number"] {
+.fieldset input[type="range"] + input[type="number"] {
   width: 30%;
 }
 

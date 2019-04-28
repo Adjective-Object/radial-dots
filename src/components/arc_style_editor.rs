@@ -73,7 +73,7 @@ impl Component for ArcStyleEditor {
 impl Renderable<ArcStyleEditor> for ArcStyleEditor {
     fn view(&self) -> Html<Self> {
         return html! {
-            <form class="arc-style-editor",>
+            <form class="arc-style-editor fieldset",>
                 <FloatFieldSet:
                     human_name="Radius",
                     input_name="arc-radius",

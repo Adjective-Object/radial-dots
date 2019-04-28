@@ -72,7 +72,7 @@ impl Component for DotEditor {
 impl Renderable<DotEditor> for DotEditor {
     fn view(&self) -> Html<Self> {
         return html! {
-            <form class="dot-editor",>
+            <form class="dot-editor fieldset",>
                 <FloatFieldSet:
                     human_name="Circle Radius",
                     input_name="circle_radius",
