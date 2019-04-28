@@ -1,0 +1,10 @@
+[package]
+name = "radial_dots_yew"
+version = "0.1.1"
+authors = ["Maxwell Huang-Hobbs <mhuan13@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+stdweb = "0.4.2"
+yew = "0.6.0"
+base64 = "0.10.1"
