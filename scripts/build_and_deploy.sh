@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+set -x
+
+INITIAL_DIR=$(dirname $0)/..
+
 cargo-web deploy --release
 du -h ./target/deploy/radial_dots_yew.wasm
 
@@ -12,10 +16,14 @@ du -h ./target/deploy/radial_dots_yew.wasm
 
 #!/usr/bin/env bash
 if [ -z "$(git status --porcelain)" ]; then 
+    echo "working clean. deploying"
 
-    echo "working dir not clean -- not deploying"
+    DIR=$(mktemp -d)
+    git clone $INITIAL_DIR $DIR
+    cd $DIR
+
     git branch -D gh-pages || true
-    git checkout -gh-pages
+    git checkout -b gh-pages
     git push --force origin gh-pages
 
 else 
