@@ -78,7 +78,7 @@ impl Renderable<ArcStyleEditor> for ArcStyleEditor {
                     human_name="Radius",
                     input_name="arc-radius",
                     value={self.arc_style.radius},
-                    max={10.0},
+                    max={50.0},
                     on_input=|new_val| ArcStyleEditorMsg::UpdateRadius(new_val),
                 />
                 <FloatFieldSet:

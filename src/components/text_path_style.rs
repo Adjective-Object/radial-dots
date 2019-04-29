@@ -143,7 +143,7 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
                 html! {
                     <button
                         class="add-override-fallback",
-                        onclick=|_| TextPathStyleEditorMsg::OnAddOneDot,
+                        onclick=|_| TextPathStyleEditorMsg::OnAddZeroDot,
                         >
                         {"⊕ override [0] dot"}
                     </button>

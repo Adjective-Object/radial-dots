@@ -130,7 +130,7 @@ impl Component for App {
             AppMsg::UpdateDiagramText(new_text) => {
                 let mut new_text_paths: Vec<TextPath> = vec![];
                 for (i, line) in new_text.split('\n').enumerate() {
-                    if self.diagram.paths.len() < i {
+                    if self.diagram.paths.len() > i {
                         new_text_paths.push(TextPath {
                             text: line.to_string(),
                             style: TextPathStyle {
@@ -191,8 +191,8 @@ impl Renderable<App> for App {
                     on_one_dot_updated=move |dot| AppMsg::UpdatePathOneDotStyle(index, dot),
                     on_arc_style_updated=move |arc| AppMsg::UpdatePathArcStyle(index, arc),
 
-                    on_add_one_dot_override=move |_| AppMsg::InitPathZeroDotStyle(index),
-                    on_add_zero_dot_override=move |_| AppMsg::InitPathOneDotStyle(index),
+                    on_add_one_dot_override=move |_| AppMsg::InitPathOneDotStyle(index),
+                    on_add_zero_dot_override=move |_| AppMsg::InitPathZeroDotStyle(index),
                     on_add_arc_style_override=move |_| AppMsg::InitPathArcStyle(index),
                     />
             }
