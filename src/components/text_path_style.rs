@@ -10,6 +10,10 @@ pub struct TextPathStyleEditor {
     pub on_zero_dot_updated: Callback<(Dot)>,
     pub on_arc_style_updated: Callback<(ArcStyle)>,
 
+    pub on_add_one_dot_override: Option<Callback<()>>,
+    pub on_add_zero_dot_override: Option<Callback<()>>,
+    pub on_add_arc_style_override: Option<Callback<()>>,
+
     pub collapsed: bool,
 }
 
@@ -17,9 +21,14 @@ pub struct TextPathStyleEditor {
 pub struct TextPathStyleEditorProps {
     pub style: TextPathStyle,
     pub header: String,
+
     pub on_one_dot_updated: Option<Callback<(Dot)>>,
     pub on_zero_dot_updated: Option<Callback<(Dot)>>,
     pub on_arc_style_updated: Option<Callback<(ArcStyle)>>,
+
+    pub on_add_one_dot_override: Option<Callback<()>>,
+    pub on_add_zero_dot_override: Option<Callback<()>>,
+    pub on_add_arc_style_override: Option<Callback<()>>,
 }
 
 pub enum TextPathStyleEditorMsg {
@@ -27,6 +36,10 @@ pub enum TextPathStyleEditorMsg {
     ZeroDotUpdated(Dot),
     ArcStyleUpdated(ArcStyle),
     ToggleCollapsed,
+
+    OnAddOneDot,
+    OnAddZeroDot,
+    OnAddArcStyle,
 }
 
 impl Component for TextPathStyleEditor {
@@ -37,6 +50,7 @@ impl Component for TextPathStyleEditor {
         TextPathStyleEditor {
             style: props.style,
             header: props.header,
+
             on_one_dot_updated: match props.on_one_dot_updated {
                 Some(x) => x,
                 None => panic!("on_one_dot_updated must be specified"),
@@ -49,7 +63,12 @@ impl Component for TextPathStyleEditor {
                 Some(x) => x,
                 None => panic!("on_arc_style_updated must be specified"),
             },
+
             collapsed: false,
+
+            on_add_one_dot_override: props.on_add_one_dot_override,
+            on_add_zero_dot_override: props.on_add_zero_dot_override,
+            on_add_arc_style_override: props.on_add_arc_style_override,
         }
     }
 
@@ -64,6 +83,18 @@ impl Component for TextPathStyleEditor {
                 self.collapsed = !self.collapsed;
                 return true;
             }
+            TextPathStyleEditorMsg::OnAddOneDot => match &self.on_add_one_dot_override {
+                Some(x) => x.emit(()),
+                None => {}
+            },
+            TextPathStyleEditorMsg::OnAddZeroDot => match &self.on_add_zero_dot_override {
+                Some(x) => x.emit(()),
+                None => {}
+            },
+            TextPathStyleEditorMsg::OnAddArcStyle => match &self.on_add_arc_style_override {
+                Some(x) => x.emit(()),
+                None => {}
+            },
         };
 
         false // update given in onChange in parent state
@@ -89,6 +120,10 @@ impl Component for TextPathStyleEditor {
             None => panic!("on_arc_style_updated must be specified"),
         };
 
+        self.on_add_one_dot_override = props.on_add_one_dot_override;
+        self.on_add_zero_dot_override = props.on_add_zero_dot_override;
+        self.on_add_arc_style_override = props.on_add_arc_style_override;
+
         return should_render;
     }
 }
@@ -105,7 +140,14 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
                 </>
             },
             _ => {
-                html! {<button class="add-override-fallback",>{"⊕ override [0] dot"}</button>}
+                html! {
+                    <button
+                        class="add-override-fallback",
+                        onclick=|_| TextPathStyleEditorMsg::OnAddOneDot,
+                        >
+                        {"⊕ override [0] dot"}
+                    </button>
+                }
             }
         };
 
@@ -119,7 +161,14 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
                 </>
             },
             _ => {
-                html! {<button class="add-override-fallback",>{"⊕ override [1] dot "}</button>}
+                html! {
+                    <button
+                        class="add-override-fallback",
+                        onclick=|_| TextPathStyleEditorMsg::OnAddOneDot,
+                        >
+                        {"⊕ override [1] dot "}
+                    </button>
+                }
             }
         };
 
@@ -133,7 +182,14 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
                 </>
             },
             _ => {
-                html! {<button class="add-override-fallback",>{"⊕ override arc style"}</button>}
+                html! {
+                    <button
+                        class="add-override-fallback",
+                        onclick=|_| TextPathStyleEditorMsg::OnAddArcStyle,
+                        >
+                        {"⊕ override arc style"}
+                    </button>
+                }
             }
         };
 

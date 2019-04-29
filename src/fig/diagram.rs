@@ -21,8 +21,8 @@ impl Diagram {
         return Rect {
             x: 0.0,
             y: 0.0,
-            width: radius + 2.0 * self.diagram_padding,
-            height: radius + 2.0 * self.diagram_padding,
+            width: (radius + self.diagram_padding) * 2.0,
+            height: (radius + self.diagram_padding) * 2.0,
         };
     }
 }

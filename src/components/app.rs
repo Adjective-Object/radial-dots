@@ -21,6 +21,9 @@ pub enum AppMsg {
     UpdatePathOneDotStyle(usize, Dot),
     UpdatePathZeroDotStyle(usize, Dot),
     UpdatePathArcStyle(usize, ArcStyle),
+    InitPathOneDotStyle(usize),
+    InitPathZeroDotStyle(usize),
+    InitPathArcStyle(usize),
 
     UpdateBackgroundColor(String),
     UpdateStrokeColor(String),
@@ -105,6 +108,18 @@ impl Component for App {
             AppMsg::UpdatePathArcStyle(index, new_style) => {
                 self.diagram.paths[index].style.arc_style = Some(new_style);
             }
+            AppMsg::InitPathOneDotStyle(index) => {
+                self.diagram.paths[index].style.one_dot_style =
+                    Some(self.style.default_one_dot_style.clone())
+            }
+            AppMsg::InitPathZeroDotStyle(index) => {
+                self.diagram.paths[index].style.zero_dot_style =
+                    Some(self.style.default_zero_dot_style.clone())
+            }
+            AppMsg::InitPathArcStyle(index) => {
+                self.diagram.paths[index].style.arc_style =
+                    Some(self.style.default_arc_style.clone())
+            }
 
             AppMsg::UpdateBackgroundColor(new_color) => {
                 self.style.background_color = new_color;
@@ -175,6 +190,10 @@ impl Renderable<App> for App {
                     on_zero_dot_updated=move |dot| AppMsg::UpdatePathZeroDotStyle(index, dot),
                     on_one_dot_updated=move |dot| AppMsg::UpdatePathOneDotStyle(index, dot),
                     on_arc_style_updated=move |arc| AppMsg::UpdatePathArcStyle(index, arc),
+
+                    on_add_one_dot_override=move |_| AppMsg::InitPathZeroDotStyle(index),
+                    on_add_zero_dot_override=move |_| AppMsg::InitPathOneDotStyle(index),
+                    on_add_arc_style_override=move |_| AppMsg::InitPathArcStyle(index),
                     />
             }
         });
