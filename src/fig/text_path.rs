@@ -20,10 +20,15 @@ pub struct ArcStyle {
 
 #[derive(Debug)]
 pub struct TextPath {
+    pub style: TextPathStyle,
+    pub text: String,
+}
+
+#[derive(Debug, Default, PartialEq, Clone)]
+pub struct TextPathStyle {
     pub zero_dot_style: Option<Dot>,
     pub one_dot_style: Option<Dot>,
     pub arc_style: Option<ArcStyle>,
-    pub text: String,
 }
 
 impl<'style_and_self_lifetime> TextPath {
@@ -31,7 +36,7 @@ impl<'style_and_self_lifetime> TextPath {
         &'style_and_self_lifetime self,
         style: &'style_and_self_lifetime DrawingStyle,
     ) -> &'style_and_self_lifetime ArcStyle {
-        match &self.arc_style {
+        match &self.style.arc_style {
             Some(style) => &style,
             None => &style.default_arc_style,
         }
@@ -41,7 +46,7 @@ impl<'style_and_self_lifetime> TextPath {
         &'style_and_self_lifetime self,
         style: &'style_and_self_lifetime DrawingStyle,
     ) -> &'style_and_self_lifetime Dot {
-        match &self.zero_dot_style {
+        match &self.style.zero_dot_style {
             Some(style) => &style,
             None => &style.default_zero_dot_style,
         }
@@ -51,7 +56,7 @@ impl<'style_and_self_lifetime> TextPath {
         &'style_and_self_lifetime self,
         style: &'style_and_self_lifetime DrawingStyle,
     ) -> &'style_and_self_lifetime Dot {
-        match &self.one_dot_style {
+        match &self.style.one_dot_style {
             Some(style) => &style,
             None => &style.default_one_dot_style,
         }

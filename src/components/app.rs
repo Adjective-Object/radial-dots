@@ -1,12 +1,12 @@
-use crate::components::{arc_style_editor::ArcStyleEditor, dot_editor::DotEditor};
+use crate::components::text_path_style::TextPathStyleEditor;
 use crate::drawing_style::DrawingStyle;
 use crate::fig::diagram::Diagram;
 use crate::fig::dot::Dot;
 use crate::fig::text_path::ArcStyle;
-use crate::fig::text_path::TextPath;
+use crate::fig::text_path::{TextPath, TextPathStyle};
 use crate::svg::svg_drawable::SvgDrawable;
 
-use yew::{events::ChangeData, html, Component, ComponentLink, Html, Renderable, ShouldRender};
+use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
 
 pub struct App {
     style: DrawingStyle,
@@ -17,6 +17,11 @@ pub enum AppMsg {
     UpdateDefaultOneDotStyle(Dot),
     UpdateDefaultZeroDotStyle(Dot),
     UpdateDefaultArcStyle(ArcStyle),
+
+    UpdatePathOneDotStyle(usize, Dot),
+    UpdatePathZeroDotStyle(usize, Dot),
+    UpdatePathArcStyle(usize, ArcStyle),
+
     UpdateBackgroundColor(String),
     UpdateStrokeColor(String),
     UpdateDiagramText(String),
@@ -52,21 +57,27 @@ impl Component for App {
                 paths: vec![
                     TextPath {
                         text: "he".to_string(),
-                        zero_dot_style: None,
-                        one_dot_style: None,
-                        arc_style: None,
+                        style: TextPathStyle {
+                            zero_dot_style: None,
+                            one_dot_style: None,
+                            arc_style: None,
+                        },
                     },
                     TextPath {
                         text: "ll".to_string(),
-                        zero_dot_style: None,
-                        one_dot_style: None,
-                        arc_style: None,
+                        style: TextPathStyle {
+                            zero_dot_style: None,
+                            one_dot_style: None,
+                            arc_style: None,
+                        },
                     },
                     TextPath {
                         text: "o".to_string(),
-                        zero_dot_style: None,
-                        one_dot_style: None,
-                        arc_style: None,
+                        style: TextPathStyle {
+                            zero_dot_style: None,
+                            one_dot_style: None,
+                            arc_style: None,
+                        },
                     },
                 ],
             },
@@ -84,6 +95,17 @@ impl Component for App {
             AppMsg::UpdateDefaultArcStyle(new_style) => {
                 self.style.default_arc_style = new_style;
             }
+
+            AppMsg::UpdatePathOneDotStyle(index, new_style) => {
+                self.diagram.paths[index].style.one_dot_style = Some(new_style);
+            }
+            AppMsg::UpdatePathZeroDotStyle(index, new_style) => {
+                self.diagram.paths[index].style.zero_dot_style = Some(new_style);
+            }
+            AppMsg::UpdatePathArcStyle(index, new_style) => {
+                self.diagram.paths[index].style.arc_style = Some(new_style);
+            }
+
             AppMsg::UpdateBackgroundColor(new_color) => {
                 self.style.background_color = new_color;
             }
@@ -96,25 +118,29 @@ impl Component for App {
                     if self.diagram.paths.len() < i {
                         new_text_paths.push(TextPath {
                             text: line.to_string(),
-                            zero_dot_style: match &self.diagram.paths[i].zero_dot_style {
-                                Some(x) => Some(x.clone()),
-                                None => None,
-                            },
-                            one_dot_style: match &self.diagram.paths[i].one_dot_style {
-                                Some(x) => Some(x.clone()),
-                                None => None,
-                            },
-                            arc_style: match &self.diagram.paths[i].arc_style {
-                                Some(x) => Some(x.clone()),
-                                None => None,
+                            style: TextPathStyle {
+                                zero_dot_style: match &self.diagram.paths[i].style.zero_dot_style {
+                                    Some(x) => Some(x.clone()),
+                                    None => None,
+                                },
+                                one_dot_style: match &self.diagram.paths[i].style.one_dot_style {
+                                    Some(x) => Some(x.clone()),
+                                    None => None,
+                                },
+                                arc_style: match &self.diagram.paths[i].style.arc_style {
+                                    Some(x) => Some(x.clone()),
+                                    None => None,
+                                },
                             },
                         })
                     } else {
                         new_text_paths.push(TextPath {
                             text: line.to_string(),
-                            zero_dot_style: None,
-                            one_dot_style: None,
-                            arc_style: None,
+                            style: TextPathStyle {
+                                zero_dot_style: None,
+                                one_dot_style: None,
+                                arc_style: None,
+                            },
                         })
                     }
                 }
@@ -141,39 +167,47 @@ impl Renderable<App> for App {
     fn view(&self) -> Html<Self> {
         let background_style = format!("background-color: {}", self.style.background_color);
 
+        let path_styles = self.diagram.paths.iter().enumerate().map(|(index, path)| {
+            html! {
+                <TextPathStyleEditor:
+                    header={format!{"\"{}\"", path.text}},
+                    style={path.style.clone()},
+                    on_zero_dot_updated=move |dot| AppMsg::UpdatePathOneDotStyle(index, dot),
+                    on_one_dot_updated=move |dot| AppMsg::UpdatePathZeroDotStyle(index, dot),
+                    on_arc_style_updated=move |arc| AppMsg::UpdatePathArcStyle(index, arc),
+                    />
+            }
+        });
+
         return html! {
-        <>
-            <link rel="stylesheet", type="text/css", href="./style.css", />
-            <div class="app-split", style=background_style,>
-                {dots_diagram_view(self)}
-                <div class="control-bar",>
-                    <textarea
-                        oninput=|e| AppMsg::UpdateDiagramText(e.value),>
-                        {App::get_paths_as_multiline_text(
-                            &self.diagram.paths,
-                        )}
-                    </textarea>
-                    <h2>{"Defaults"}</h2>
-                    <h3>{"Arc Style"}</h3>
-                    <ArcStyleEditor:
-                        arc_style={self.style.default_arc_style.clone()},
-                        on_updated=|arc| AppMsg::UpdateDefaultArcStyle(arc),
-                        />
-                    <h3>{"One Dot"}</h3>
-                    <DotEditor:
-                        dot={self.style.default_one_dot_style.clone()},
-                        on_updated=|dot| AppMsg::UpdateDefaultOneDotStyle(dot),
-                        />
-                    <h3>{"Zero Dot"}</h3>
-                    <DotEditor:
-                        dot={self.style.default_zero_dot_style.clone()},
-                        on_updated=|dot| AppMsg::UpdateDefaultZeroDotStyle(dot),
-                        />
-                    <hr class="controls-divider", />
-                    <hr class="controls-divider", />
+            <>
+                <link rel="stylesheet", type="text/css", href="./style.css", />
+                <div class="app-split", style=background_style,>
+                    {dots_diagram_view(self)}
+                    <div class="control-bar",>
+                        <textarea
+                            class="control-textarea",
+                            oninput=|e| AppMsg::UpdateDiagramText(e.value),>
+                            {App::get_paths_as_multiline_text(
+                                &self.diagram.paths,
+                            )}
+                        </textarea>
+                        <TextPathStyleEditor:
+                            header="Defaults",
+                            style={TextPathStyle {
+                                one_dot_style: Some(self.style.default_one_dot_style.clone()),
+                                zero_dot_style: Some(self.style.default_zero_dot_style.clone()),
+                                arc_style: Some(self.style.default_arc_style.clone()),
+                            }},
+                            on_zero_dot_updated=|dot| AppMsg::UpdateDefaultOneDotStyle(dot),
+                            on_one_dot_updated=|dot| AppMsg::UpdateDefaultZeroDotStyle(dot),
+                            on_arc_style_updated=|arc| AppMsg::UpdateDefaultArcStyle(arc),
+                            />
+                        <hr class="controls-divider", />
+                        {for path_styles}
+                    </div>
                 </div>
-            </div>
-        </>
+            </>
         };
     }
 }
