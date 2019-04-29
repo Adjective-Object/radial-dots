@@ -93,6 +93,8 @@ input[type="color"] {
 .dot-ring-img {
   min-width: 0;
   min-height: 0;
+  width: 100%;
+  flex-shrink: 1;
 }
 
 .text-path-style-editor {
