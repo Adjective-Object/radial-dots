@@ -75,7 +75,7 @@ impl Renderable<FloatFieldSet> for FloatFieldSet {
                     min="0.0",
                     max={self.max},
                     value={self.value},
-                    step={self.max/100.0},
+                    step={self.max/500.0},
                     oninput=|e| FloatFieldSetMessage::Changed(e.value.parse().unwrap()),
                     />
                 <input
@@ -84,7 +84,7 @@ impl Renderable<FloatFieldSet> for FloatFieldSet {
                     min="0.0",
                     max={self.max},
                     value={self.value},
-                    step={self.max/100.0},
+                    step={self.max/500.0},
                     oninput=|e| FloatFieldSetMessage::Changed(e.value.parse().unwrap()),
                     />
             </>

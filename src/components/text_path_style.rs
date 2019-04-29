@@ -71,6 +71,9 @@ impl Component for TextPathStyleEditor {
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         let should_render = props.style != self.style || props.header != self.header;
+        if props.style != self.style {
+            self.style = props.style;
+        }
         self.header = props.header;
 
         self.on_one_dot_updated = match props.on_one_dot_updated {
@@ -92,7 +95,7 @@ impl Component for TextPathStyleEditor {
 
 impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
     fn view(&self) -> Html<Self> {
-        let zero_dot_dom = match &self.style.one_dot_style {
+        let zero_dot_dom = match &self.style.zero_dot_style {
             Some(dot) => html! {<>
                 <h3>{"Zero Dot"}</h3>
                 <DotEditor:

@@ -91,7 +91,7 @@ impl Renderable<DotEditor> for DotEditor {
                     human_name="Ring Stoke Width",
                     input_name="ring_stroke_width",
                     value={self.dot.ring_stroke_width},
-                    max={10.0},
+                    max={5.0},
                     on_input=|new_val| DotEditorMsg::RingStrokeWidthChange(new_val),
                 />
             </form>

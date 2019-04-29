@@ -172,8 +172,8 @@ impl Renderable<App> for App {
                 <TextPathStyleEditor:
                     header={format!{"\"{}\"", path.text}},
                     style={path.style.clone()},
-                    on_zero_dot_updated=move |dot| AppMsg::UpdatePathOneDotStyle(index, dot),
-                    on_one_dot_updated=move |dot| AppMsg::UpdatePathZeroDotStyle(index, dot),
+                    on_zero_dot_updated=move |dot| AppMsg::UpdatePathZeroDotStyle(index, dot),
+                    on_one_dot_updated=move |dot| AppMsg::UpdatePathOneDotStyle(index, dot),
                     on_arc_style_updated=move |arc| AppMsg::UpdatePathArcStyle(index, arc),
                     />
             }
@@ -199,8 +199,8 @@ impl Renderable<App> for App {
                                 zero_dot_style: Some(self.style.default_zero_dot_style.clone()),
                                 arc_style: Some(self.style.default_arc_style.clone()),
                             }},
-                            on_zero_dot_updated=|dot| AppMsg::UpdateDefaultOneDotStyle(dot),
-                            on_one_dot_updated=|dot| AppMsg::UpdateDefaultZeroDotStyle(dot),
+                            on_zero_dot_updated=|dot| AppMsg::UpdateDefaultZeroDotStyle(dot),
+                            on_one_dot_updated=|dot| AppMsg::UpdateDefaultOneDotStyle(dot),
                             on_arc_style_updated=|arc| AppMsg::UpdateDefaultArcStyle(arc),
                             />
                         <hr class="controls-divider", />
