@@ -2,7 +2,7 @@
 
 set -x
 
-INITIAL_DIR=$(dirname $0)/..
+INITIAL_DIR=$(realpath $(dirname $0)/..)
 
 cargo-web deploy --release
 du -h ./target/deploy/radial_dots_yew.wasm
@@ -14,16 +14,20 @@ wasm-opt -Oz \
 mv ./target/deploy/radial_dots_yew_compressed.wasm ./target/deploy/radial_dots_yew.wasm
 du -h ./target/deploy/radial_dots_yew.wasm
 
-#!/usr/bin/env bash
+!/usr/bin/env bash
 if [ -z "$(git status --porcelain)" ]; then 
     echo "working clean. deploying"
 
-    DIR=$(mktemp -d)
-    git clone $INITIAL_DIR $DIR
-    cd $DIR
+    cd $(mktemp -d)
 
-    git branch -D gh-pages || true
+    git init
+    git remote add origin git@github.com:Adjective-Object/radial-dots-yew.git
     git checkout -b gh-pages
+    cp "$INITIAL_DIR"/target/deploy/* .
+    git add .
+    git commit -m "auto build"
+    git status
+    tree
     git push --force origin gh-pages
 
 else 
