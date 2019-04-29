@@ -5,14 +5,14 @@ set -x
 INITIAL_DIR=$(realpath $(dirname $0)/..)
 
 cargo-web deploy --release
-du -h ./target/deploy/radial_dots_yew.wasm
+du -h ./target/deploy/radial_dots.wasm
 
 wasm-opt -Oz \
-    -o ./target/deploy/radial_dots_yew_compressed.wasm \
-    ./target/deploy/radial_dots_yew.wasm
+    -o ./target/deploy/radial_dots_compressed.wasm \
+    ./target/deploy/radial_dots.wasm
 
-mv ./target/deploy/radial_dots_yew_compressed.wasm ./target/deploy/radial_dots_yew.wasm
-du -h ./target/deploy/radial_dots_yew.wasm
+mv ./target/deploy/radial_dots_compressed.wasm ./target/deploy/radial_dots.wasm
+du -h ./target/deploy/radial_dots.wasm
 
 !/usr/bin/env bash
 if [ -z "$(git status --porcelain)" ]; then 

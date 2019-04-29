@@ -177,7 +177,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "radial_dots_yew"
+name = "radial_dots"
 version = "0.1.1"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",

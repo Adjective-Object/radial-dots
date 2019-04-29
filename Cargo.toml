@@ -1,5 +1,5 @@
 [package]
-name = "radial_dots_yew"
+name = "radial_dots"
 version = "0.1.1"
 authors = ["Maxwell Huang-Hobbs <mhuan13@gmail.com>"]
 edition = "2018"

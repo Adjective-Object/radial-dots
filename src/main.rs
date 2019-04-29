@@ -1,4 +1,4 @@
-use radial_dots_yew::components::app::App;
+use radial_dots::components::app::App;
 
 extern crate wee_alloc;
 
