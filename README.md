@@ -1,9 +1,18 @@
-# radial-dots-yew
+# radial-dots
 
-Trying out the yew framework for this radial dots thing.
+Successor to [dots](https://github.com/Adjective-Object/dots)
+
+Built with [yew framework](https://github.com/DenisKolodin/yew)
+
+## Dev quick start
 
 ```
 cargo web start
 ```
 
 go to localhost:8000
+
+## Deploying (gh pages)
+```
+./scripts/build_and_deploy.sh
+```
