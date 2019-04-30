@@ -1,10 +1,13 @@
 use crate::components::float_field_set::FloatFieldSet;
+use crate::drawing_style::{DrawingColors};
 use crate::fig::dot::Dot;
 use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRender};
+use crate::components::dots_diagram::dots_diagram_view;
 
 pub struct DotEditor {
     pub dot: Dot,
     pub on_updated: Callback<(Dot)>,
+    pub color_style: DrawingColors,
 }
 
 #[derive(Default, PartialEq, Clone)]
@@ -13,6 +16,7 @@ pub struct DotEditorProps {
     // TODO I'm only wrapping this in option because Callback
     // doesn't derive Default, but Option<Callback> does.
     pub on_updated: Option<Callback<(Dot)>>,
+    pub color_style: DrawingColors,
 }
 
 pub enum DotEditorMsg {
@@ -32,6 +36,7 @@ impl Component for DotEditor {
                 Some(x) => x,
                 None => panic!("on_updated must be specified"),
             },
+            color_style: props.color_style,
         }
     }
 
@@ -58,12 +63,14 @@ impl Component for DotEditor {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        let should_render = props.dot != self.dot;
+        let should_render = props.dot != self.dot || props.color_style != self.color_style;
         self.dot = props.dot;
         self.on_updated = match props.on_updated {
             Some(x) => x,
             None => panic!("on_updated must be specified"),
         };
+        self.color_style = props.color_style;
+
 
         return should_render;
     }
@@ -73,27 +80,30 @@ impl Renderable<DotEditor> for DotEditor {
     fn view(&self) -> Html<Self> {
         return html! {
             <form class="dot-editor fieldset",>
-                <FloatFieldSet:
-                    human_name="Circle Radius",
-                    input_name="circle_radius",
-                    value={self.dot.circle_radius},
-                    max={10.0},
-                    on_input=|new_val| DotEditorMsg::CircleRadiusChange(new_val),
-                />
-                <FloatFieldSet:
-                    human_name="Ring Radius",
-                    input_name="ring_radius",
-                    value={self.dot.ring_radius},
-                    max={10.0},
-                    on_input=|new_val| DotEditorMsg::RingRadiusChange(new_val),
-                />
-                <FloatFieldSet:
-                    human_name="Ring Stoke Width",
-                    input_name="ring_stroke_width",
-                    value={self.dot.ring_stroke_width},
-                    max={5.0},
-                    on_input=|new_val| DotEditorMsg::RingStrokeWidthChange(new_val),
-                />
+                {dots_diagram_view(self.dot, self.color_style)}
+                <span class="fields",>
+                    <FloatFieldSet:
+                        human_name="Circle Radius",
+                        input_name="circle_radius",
+                        value={self.dot.circle_radius},
+                        max={10.0},
+                        on_input=|new_val| DotEditorMsg::CircleRadiusChange(new_val),
+                    />
+                    <FloatFieldSet:
+                        human_name="Ring Radius",
+                        input_name="ring_radius",
+                        value={self.dot.ring_radius},
+                        max={10.0},
+                        on_input=|new_val| DotEditorMsg::RingRadiusChange(new_val),
+                    />
+                    <FloatFieldSet:
+                        human_name="Ring Stoke Width",
+                        input_name="ring_stroke_width",
+                        value={self.dot.ring_stroke_width},
+                        max={5.0},
+                        on_input=|new_val| DotEditorMsg::RingStrokeWidthChange(new_val),
+                    />
+                </span>
             </form>
         };
     }

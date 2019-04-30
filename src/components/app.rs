@@ -1,10 +1,11 @@
-use crate::components::text_path_style::TextPathStyleEditor;
+use crate::components::text_path_style_editor::TextPathStyleEditor;
 use crate::drawing_style::DrawingStyle;
 use crate::fig::diagram::Diagram;
 use crate::fig::dot::Dot;
 use crate::fig::text_path::ArcStyle;
 use crate::fig::text_path::{TextPath, TextPathStyle};
-use crate::svg::svg_drawable::SvgDrawable;
+use crate::svg::svg_drawable::SvgFragment;
+use crate::components::dots_diagram::dots_diagram_view;
 
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
 
@@ -164,18 +165,6 @@ impl Component for App {
         }
         true
     }
-}
-
-pub fn dots_diagram_view(app: &App) -> Html<App> {
-    let raw_svg_string: String = app.diagram.as_svg(&app.style);
-    let img_base64_src: String = format!(
-        "data:image/svg+xml;base64,{}",
-        base64::encode_config(&raw_svg_string, base64::STANDARD)
-    );
-
-    return html! {
-        <img class="dot-ring-img", src=img_base64_src, />
-    };
 }
 
 impl Renderable<App> for App {

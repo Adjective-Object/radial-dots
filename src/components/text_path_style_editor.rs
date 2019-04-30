@@ -1,6 +1,7 @@
 use crate::components::{arc_style_editor::ArcStyleEditor, dot_editor::DotEditor};
 use crate::fig::dot::Dot;
 use crate::fig::text_path::{ArcStyle, TextPathStyle};
+use crate::drawing_style::{DrawingColors};
 use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRender};
 
 pub struct TextPathStyleEditor {
@@ -136,6 +137,10 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
                 <DotEditor:
                     dot={dot.clone()},
                     on_updated=|new_dot| TextPathStyleEditorMsg::ZeroDotUpdated(new_dot),
+                    color_style={DrawingColors {
+                        stroke_color: "#333333".to_string(),
+                        background_color: "#EEEEEE".to_string(),
+                    }},
                     />
                 </>
             },
@@ -157,6 +162,10 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
                 <DotEditor:
                     dot={dot.clone()},
                     on_updated=|new_dot| TextPathStyleEditorMsg::OneDotUpdated(new_dot),
+                    color_style={DrawingColors {
+                        stroke_color: "#333333".to_string(),
+                        background_color: "#EEEEEE".to_string(),
+                    }},
                     />
                 </>
             },

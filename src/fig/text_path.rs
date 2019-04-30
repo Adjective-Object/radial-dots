@@ -1,7 +1,7 @@
 use crate::drawing_style::DrawingStyle;
 use crate::fig::dot::Dot;
 use crate::float_utils::fmax;
-use crate::svg::svg_drawable::SvgDrawable;
+use crate::svg::svg_drawable::SvgFragment;
 use crate::svg::util::translate_svg;
 use crate::utf_to_binary::text_to_binary;
 // use wasm_bindgen::prelude::*;
@@ -75,18 +75,18 @@ impl<'style_and_self_lifetime> TextPath {
     }
 }
 
-impl SvgDrawable for TextPath {
+impl SvgFragment<DrawingStyle> for TextPath {
     /// Builds an svg for the text path
     ///
     /// The text path is radial and centered on the point (0,0)
-    fn as_svg(&self, style: &DrawingStyle) -> String {
+    fn as_svg_fragment(&self, style: &DrawingStyle) -> String {
         let mut text_binary = match text_to_binary(&self.text) {
             Some(text_binary) => text_binary,
             None => vec![],
         };
 
-        let zero_dot_string: String = self.get_zero_dot_style(style).as_svg(style);
-        let one_dot_string: String = self.get_one_dot_style(style).as_svg(style);
+        let zero_dot_string: String = self.get_zero_dot_style(style).as_svg_fragment(style);
+        let one_dot_string: String = self.get_one_dot_style(style).as_svg_fragment(style);
 
         let mut dots: Vec<String> = Vec::with_capacity(text_binary.len());
         let arc_style = self.get_arc_style(style);

@@ -2,7 +2,7 @@ use crate::drawing_style::DrawingStyle;
 use crate::fig::text_path::*;
 use crate::float_utils::fmax;
 use crate::geom::*;
-use crate::svg::svg_drawable::SvgDrawable;
+use crate::svg::svg_drawable::SvgFragment;
 use crate::svg::util::*;
 
 #[derive(Debug)]
@@ -27,8 +27,8 @@ impl Diagram {
     }
 }
 
-impl SvgDrawable for Diagram {
-    fn as_svg(&self, style: &DrawingStyle) -> String {
+impl SvgRenderer<DrawingStyle> for Diagram {
+    fn as_standalone_svg(&self, style: &DrawingStyle) -> String {
         let mut svg_parts: Vec<String> = Vec::with_capacity(self.paths.len() + 1);
         let diagram_bounds: Rect = self.get_bounding_rect(style);
         let diagram_center: Vector2 = diagram_bounds.center();
@@ -36,7 +36,7 @@ impl SvgDrawable for Diagram {
 
         for path in self.paths.iter() {
             svg_parts.push(translate_svg(
-                &path.as_svg(style),
+                &path.as_svg_fragment(style),
                 diagram_center.x,
                 diagram_center.y,
             ));
