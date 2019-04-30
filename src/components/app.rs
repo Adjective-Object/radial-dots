@@ -1,11 +1,10 @@
 use crate::components::text_path_style_editor::TextPathStyleEditor;
-use crate::drawing_style::DrawingStyle;
+use crate::drawing_style::{DrawingStyle, DrawingColors};
 use crate::fig::diagram::Diagram;
 use crate::fig::dot::Dot;
 use crate::fig::text_path::ArcStyle;
 use crate::fig::text_path::{TextPath, TextPathStyle};
-use crate::svg::svg_drawable::SvgFragment;
-use crate::components::dots_diagram::dots_diagram_view;
+use crate::components::svg_view::svg_view;
 
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
 
@@ -38,8 +37,10 @@ impl Component for App {
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
         App {
             style: DrawingStyle {
-                stroke_color: "#333333".to_string(),
-                background_color: "#EEEEEE".to_string(),
+                color: DrawingColors {
+                    stroke_color: "#333333".to_string(),
+                    background_color: "#EEEEEE".to_string(),
+                },
                 default_zero_dot_style: Dot {
                     circle_radius: 1.0,
                     ring_radius: 2.0,
@@ -123,10 +124,10 @@ impl Component for App {
             }
 
             AppMsg::UpdateBackgroundColor(new_color) => {
-                self.style.background_color = new_color;
+                self.style.color.background_color = new_color;
             }
             AppMsg::UpdateStrokeColor(new_color) => {
-                self.style.stroke_color = new_color;
+                self.style.color.stroke_color = new_color;
             }
             AppMsg::UpdateDiagramText(new_text) => {
                 let mut new_text_paths: Vec<TextPath> = vec![];
@@ -169,7 +170,7 @@ impl Component for App {
 
 impl Renderable<App> for App {
     fn view(&self) -> Html<Self> {
-        let background_style = format!("background-color: {}", self.style.background_color);
+        let background_style = format!("background-color: {}", self.style.color.background_color);
 
         let path_styles = self.diagram.paths.iter().enumerate().map(|(index, path)| {
             html! {
@@ -191,7 +192,7 @@ impl Renderable<App> for App {
             <>
                 <link rel="stylesheet", type="text/css", href="./style.css", />
                 <div class="app-split", style=background_style,>
-                    {dots_diagram_view(self)}
+                    {svg_view(&self.diagram, &self.style)}
                     <div class="control-bar",>
                         <textarea
                             class="control-textarea",

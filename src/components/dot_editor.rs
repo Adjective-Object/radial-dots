@@ -1,8 +1,8 @@
 use crate::components::float_field_set::FloatFieldSet;
-use crate::drawing_style::{DrawingColors};
+use crate::components::svg_view::svg_view;
+use crate::drawing_style::DrawingColors;
 use crate::fig::dot::Dot;
 use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRender};
-use crate::components::dots_diagram::dots_diagram_view;
 
 pub struct DotEditor {
     pub dot: Dot,
@@ -71,7 +71,6 @@ impl Component for DotEditor {
         };
         self.color_style = props.color_style;
 
-
         return should_render;
     }
 }
@@ -80,7 +79,6 @@ impl Renderable<DotEditor> for DotEditor {
     fn view(&self) -> Html<Self> {
         return html! {
             <form class="dot-editor fieldset",>
-                {dots_diagram_view(self.dot, self.color_style)}
                 <span class="fields",>
                     <FloatFieldSet:
                         human_name="Circle Radius",
@@ -104,6 +102,7 @@ impl Renderable<DotEditor> for DotEditor {
                         on_input=|new_val| DotEditorMsg::RingStrokeWidthChange(new_val),
                     />
                 </span>
+                {svg_view(&self.dot, &"#EEEEEE" )}
             </form>
         };
     }

@@ -26,7 +26,7 @@ html {
   background-color: #222222;
   padding: 1em;
   overflow-y: auto;
-  min-width: 320px;
+  width: 400px;
 
   display: flex;
   flex-direction: column;
@@ -65,6 +65,15 @@ input[type="color"] {
 
 /* Dot editor */
 
+.fieldset.dot-editor {
+  display: flex;
+}
+
+.fieldset.dot-editor > img {
+  margin-left: 1em;
+  width: 80px;
+}
+
 .fieldset {
   padding-bottom: 1em;
   font-size: 0.8em;
@@ -99,7 +108,7 @@ input[type="color"] {
 
 .text-path-style-editor {
   border: 1px solid rgba(255, 255, 255, 0.25);
-  padding: 0.5em;
+  padding: 1em;
   margin: 0.5em;
   border-radius: 1.5px;
 }

@@ -58,9 +58,8 @@ impl Component for FloatFieldSet {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             FloatFieldSetMessage::Changed(v) => {
-                self.value = v;
                 self.on_input.emit(v);
-            },
+            }
         };
 
         false

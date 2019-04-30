@@ -85,8 +85,12 @@ impl SvgFragment<DrawingStyle> for TextPath {
             None => vec![],
         };
 
-        let zero_dot_string: String = self.get_zero_dot_style(style).as_svg_fragment(style);
-        let one_dot_string: String = self.get_one_dot_style(style).as_svg_fragment(style);
+        let zero_dot_string: String = self.get_zero_dot_style(style).as_svg_fragment(
+            &style.color.stroke_color.as_str()
+        );
+        let one_dot_string: String = self.get_one_dot_style(style).as_svg_fragment(
+            &style.color.stroke_color.as_str()
+        );
 
         let mut dots: Vec<String> = Vec::with_capacity(text_binary.len());
         let arc_style = self.get_arc_style(style);
