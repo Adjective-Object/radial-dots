@@ -2,7 +2,7 @@ use crate::drawing_style::DrawingStyle;
 use crate::fig::text_path::*;
 use crate::float_utils::fmax;
 use crate::geom::*;
-use crate::svg::svg_drawable::{ SvgFragment, SvgRenderer };
+use crate::svg::svg_drawable::{SvgFragment, SvgRenderer};
 use crate::svg::util::*;
 
 #[derive(Debug)]
