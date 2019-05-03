@@ -1,20 +1,21 @@
 use crate::components::{arc_style_editor::ArcStyleEditor, dot_editor::DotEditor};
+use crate::drawing_style::DrawingColors;
 use crate::fig::dot::Dot;
 use crate::fig::text_path::{ArcStyle, TextPathStyle};
-use crate::drawing_style::{DrawingColors};
 use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRender};
 
 pub struct TextPathStyleEditor {
     pub style: TextPathStyle,
     pub header: String,
-    pub on_one_dot_updated: Callback<(Dot)>,
-    pub on_zero_dot_updated: Callback<(Dot)>,
-    pub on_arc_style_updated: Callback<(ArcStyle)>,
+    pub on_one_dot_updated: Callback<Option<Dot>>,
+    pub on_zero_dot_updated: Callback<Option<Dot>>,
+    pub on_arc_style_updated: Callback<Option<ArcStyle>>,
 
     pub on_add_one_dot_override: Option<Callback<()>>,
     pub on_add_zero_dot_override: Option<Callback<()>>,
     pub on_add_arc_style_override: Option<Callback<()>>,
 
+    pub can_remove: bool,
     pub collapsed: bool,
 }
 
@@ -23,19 +24,21 @@ pub struct TextPathStyleEditorProps {
     pub style: TextPathStyle,
     pub header: String,
 
-    pub on_one_dot_updated: Option<Callback<(Dot)>>,
-    pub on_zero_dot_updated: Option<Callback<(Dot)>>,
-    pub on_arc_style_updated: Option<Callback<(ArcStyle)>>,
+    pub on_one_dot_updated: Option<Callback<Option<Dot>>>,
+    pub on_zero_dot_updated: Option<Callback<Option<Dot>>>,
+    pub on_arc_style_updated: Option<Callback<Option<ArcStyle>>>,
 
     pub on_add_one_dot_override: Option<Callback<()>>,
     pub on_add_zero_dot_override: Option<Callback<()>>,
     pub on_add_arc_style_override: Option<Callback<()>>,
+
+    pub can_remove: bool,
 }
 
 pub enum TextPathStyleEditorMsg {
-    OneDotUpdated(Dot),
-    ZeroDotUpdated(Dot),
-    ArcStyleUpdated(ArcStyle),
+    OneDotUpdated(Option<Dot>),
+    ZeroDotUpdated(Option<Dot>),
+    ArcStyleUpdated(Option<ArcStyle>),
     ToggleCollapsed,
 
     OnAddOneDot,
@@ -70,6 +73,7 @@ impl Component for TextPathStyleEditor {
             on_add_one_dot_override: props.on_add_one_dot_override,
             on_add_zero_dot_override: props.on_add_zero_dot_override,
             on_add_arc_style_override: props.on_add_arc_style_override,
+            can_remove: props.can_remove,
         }
     }
 
@@ -102,7 +106,9 @@ impl Component for TextPathStyleEditor {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        let should_render = props.style != self.style || props.header != self.header;
+        let should_render = props.style != self.style
+            || props.header != self.header
+            || props.can_remove != self.can_remove;
         if props.style != self.style {
             self.style = props.style;
         }
@@ -124,6 +130,7 @@ impl Component for TextPathStyleEditor {
         self.on_add_one_dot_override = props.on_add_one_dot_override;
         self.on_add_zero_dot_override = props.on_add_zero_dot_override;
         self.on_add_arc_style_override = props.on_add_arc_style_override;
+        self.can_remove = props.can_remove;
 
         return should_render;
     }
@@ -132,17 +139,28 @@ impl Component for TextPathStyleEditor {
 impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
     fn view(&self) -> Html<Self> {
         let zero_dot_dom = match &self.style.zero_dot_style {
-            Some(dot) => html! {<>
+            Some(dot) => html! {<section>
+                {if self.can_remove {
+                    html!{
+                        <button class="remove-override", onclick=|_| TextPathStyleEditorMsg::ZeroDotUpdated(None), >
+                            {"x"}
+                        </button>
+                    }
+                } else {
+                    html! {
+                        <></>
+                    }
+                }}
                 <h3>{"Zero Dot"}</h3>
                 <DotEditor:
                     dot={dot.clone()},
-                    on_updated=|new_dot| TextPathStyleEditorMsg::ZeroDotUpdated(new_dot),
+                    on_updated=|new_dot| TextPathStyleEditorMsg::ZeroDotUpdated(Some(new_dot)),
                     color_style={DrawingColors {
                         stroke_color: "#333333".to_string(),
                         background_color: "#EEEEEE".to_string(),
                     }},
                     />
-                </>
+                </section>
             },
             _ => {
                 html! {
@@ -157,17 +175,28 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
         };
 
         let one_dot_dom = match &self.style.one_dot_style {
-            Some(dot) => html! {<>
+            Some(dot) => html! {<section>
+                {if self.can_remove {
+                    html!{
+                        <button class="remove-override", onclick=|_| TextPathStyleEditorMsg::OneDotUpdated(None), >
+                            {"x"}
+                        </button>
+                    }
+                } else {
+                    html! {
+                        <></>
+                    }
+                }}
                 <h3>{"One Dot"}</h3>
                 <DotEditor:
                     dot={dot.clone()},
-                    on_updated=|new_dot| TextPathStyleEditorMsg::OneDotUpdated(new_dot),
+                    on_updated=|new_dot| TextPathStyleEditorMsg::OneDotUpdated(Some(new_dot)),
                     color_style={DrawingColors {
                         stroke_color: "#333333".to_string(),
                         background_color: "#EEEEEE".to_string(),
                     }},
                     />
-                </>
+                </section>
             },
             _ => {
                 html! {
@@ -182,13 +211,24 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
         };
 
         let arc_dom = match &self.style.arc_style {
-            Some(arc) => html! {<>
+            Some(arc) => html! {<section>
+                {if self.can_remove {
+                    html!{
+                        <button class="remove-override", onclick=|_| TextPathStyleEditorMsg::ArcStyleUpdated(None), >
+                            {"x"}
+                        </button>
+                    }
+                } else {
+                    html! {
+                        <></>
+                    }
+                }}
                 <h3>{"Arc Style"}</h3>
                 <ArcStyleEditor:
                     arc_style={arc.clone()},
-                    on_updated=|new_arc| TextPathStyleEditorMsg::ArcStyleUpdated(new_arc),
+                    on_updated=|new_arc| TextPathStyleEditorMsg::ArcStyleUpdated(Some(new_arc)),
                     />
-                </>
+                </section>
             },
             _ => {
                 html! {

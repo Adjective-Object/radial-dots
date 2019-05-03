@@ -1,10 +1,10 @@
+use crate::components::svg_view::svg_view;
 use crate::components::text_path_style_editor::TextPathStyleEditor;
-use crate::drawing_style::{DrawingStyle, DrawingColors};
+use crate::drawing_style::{DrawingColors, DrawingStyle};
 use crate::fig::diagram::Diagram;
 use crate::fig::dot::Dot;
 use crate::fig::text_path::ArcStyle;
 use crate::fig::text_path::{TextPath, TextPathStyle};
-use crate::components::svg_view::svg_view;
 
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
 
@@ -14,13 +14,13 @@ pub struct App {
 }
 
 pub enum AppMsg {
-    UpdateDefaultOneDotStyle(Dot),
-    UpdateDefaultZeroDotStyle(Dot),
-    UpdateDefaultArcStyle(ArcStyle),
+    UpdateDefaultOneDotStyle(Option<Dot>),
+    UpdateDefaultZeroDotStyle(Option<Dot>),
+    UpdateDefaultArcStyle(Option<ArcStyle>),
 
-    UpdatePathOneDotStyle(usize, Dot),
-    UpdatePathZeroDotStyle(usize, Dot),
-    UpdatePathArcStyle(usize, ArcStyle),
+    UpdatePathOneDotStyle(usize, Option<Dot>),
+    UpdatePathZeroDotStyle(usize, Option<Dot>),
+    UpdatePathArcStyle(usize, Option<ArcStyle>),
     InitPathOneDotStyle(usize),
     InitPathZeroDotStyle(usize),
     InitPathArcStyle(usize),
@@ -91,24 +91,27 @@ impl Component for App {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            AppMsg::UpdateDefaultOneDotStyle(new_style) => {
-                self.style.default_one_dot_style = new_style;
-            }
-            AppMsg::UpdateDefaultZeroDotStyle(new_style) => {
-                self.style.default_zero_dot_style = new_style;
-            }
-            AppMsg::UpdateDefaultArcStyle(new_style) => {
-                self.style.default_arc_style = new_style;
-            }
+            AppMsg::UpdateDefaultOneDotStyle(new_style) => match new_style {
+                Some(x) => self.style.default_one_dot_style = x,
+                None => panic!("default 1 style should not be updated"),
+            },
+            AppMsg::UpdateDefaultZeroDotStyle(new_style) => match new_style {
+                Some(x) => self.style.default_zero_dot_style = x,
+                None => panic!("default 0 style should not be updated"),
+            },
+            AppMsg::UpdateDefaultArcStyle(new_style) => match new_style {
+                Some(x) => self.style.default_arc_style = x,
+                None => panic!("default arc style should not be None"),
+            },
 
             AppMsg::UpdatePathOneDotStyle(index, new_style) => {
-                self.diagram.paths[index].style.one_dot_style = Some(new_style);
+                self.diagram.paths[index].style.one_dot_style = new_style;
             }
             AppMsg::UpdatePathZeroDotStyle(index, new_style) => {
-                self.diagram.paths[index].style.zero_dot_style = Some(new_style);
+                self.diagram.paths[index].style.zero_dot_style = new_style;
             }
             AppMsg::UpdatePathArcStyle(index, new_style) => {
-                self.diagram.paths[index].style.arc_style = Some(new_style);
+                self.diagram.paths[index].style.arc_style = new_style;
             }
             AppMsg::InitPathOneDotStyle(index) => {
                 self.diagram.paths[index].style.one_dot_style =
@@ -184,6 +187,7 @@ impl Renderable<App> for App {
                     on_add_one_dot_override=move |_| AppMsg::InitPathOneDotStyle(index),
                     on_add_zero_dot_override=move |_| AppMsg::InitPathZeroDotStyle(index),
                     on_add_arc_style_override=move |_| AppMsg::InitPathArcStyle(index),
+                    can_remove={true},
                     />
             }
         });
