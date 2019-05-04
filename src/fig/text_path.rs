@@ -1,21 +1,83 @@
 use crate::drawing_style::DrawingStyle;
 use crate::fig::dot::Dot;
 use crate::float_utils::fmax;
-use crate::svg::svg_drawable::SvgFragment;
+use crate::geom::{Rect, Vector2};
+use crate::svg::svg_drawable::{SvgFragment, SvgRenderer};
 use crate::svg::util::translate_svg;
 use crate::utf_to_binary::text_to_binary;
-// use wasm_bindgen::prelude::*;
-
-// extern "C" {
-//     #[wasm_bindgen(js_namespace = console)]
-//     fn log(s: &str);
-// }
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct ArcStyle {
     pub radius: f64,
     pub arc_percentage: f64,
     pub arc_offset_percentage: f64,
+}
+
+pub struct ArcPreviewStyle<'a> {
+    pub radius: f64,
+    pub color: &'a str,
+}
+
+impl<'a> SvgFragment<ArcPreviewStyle<'a>> for ArcStyle {
+    fn as_svg_fragment(&self, style: &ArcPreviewStyle<'a>) -> String {
+        let center_x = 0.0;
+        let center_y = 0.0;
+
+        let start_angle = self.arc_offset_percentage * std::f64::consts::PI * 2.0;
+        let start_x = center_x + style.radius * f64::cos(start_angle);
+        let start_y = center_y + style.radius * f64::sin(start_angle);
+
+        let end_angle =
+            (self.arc_offset_percentage + self.arc_percentage) * std::f64::consts::PI * 2.0;
+        let end_x = center_x + style.radius * f64::cos(end_angle);
+        let end_y = center_y + style.radius * f64::sin(end_angle);
+
+        format!(
+            concat!(
+                "<g stroke=\"{color}\" stroke-width=\"{ring_stroke_width}\" fill=\"none\">",
+                "<path d=\"M{start_x},{start_y} A{radius},{radius} 0 {large_arc},{sweep} {end_x},{end_y}\"/>",
+
+                // "<circle r=\"{point_radius}\" stroke=\"none\" fill=\"{color}\" cx=\"{start_x}\" cy=\"{start_y}\" />",
+                // "<circle r=\"{point_radius}\" stroke=\"none\" fill=\"{color}\" cx=\"{end_x}\" cy=\"{end_y}\" />",
+                // "<circle r=\"{point_radius}\" stroke=\"none\" fill=\"{color}\" cx=\"{center_x}\" cy=\"{center_y}\" />",
+                "</g>",
+            ),
+            color = style.color,
+            ring_stroke_width = 1,
+            start_x = start_x,
+            start_y = start_y,
+            radius = style.radius,
+            // center_x = center_x,
+            // center_y = center_y,
+            // point_radius = 1,
+            end_x = end_x,
+            end_y = end_y,
+            large_arc = if self.arc_percentage >= 0.5 { 1 } else { 0 },
+            sweep = 1,
+        )
+    }
+}
+
+impl<'a> SvgRenderer<ArcPreviewStyle<'a>> for ArcStyle {
+    fn as_standalone_svg(&self, style: &ArcPreviewStyle<'a>) -> String {
+        let bounds: Rect = Rect {
+            x: 0.0,
+            y: 0.0,
+            width: (style.radius + 1.0) * 2.0,
+            height: (style.radius + 1.0) * 2.0,
+        };
+        let center: Vector2 = bounds.center();
+        let base_svg: String = self.as_svg_fragment(style);
+
+        return format!(
+            "<svg xmlns='http://www.w3.org/2000/svg' viewBox='{} {} {} {}'>{}</svg>",
+            bounds.x,
+            bounds.y,
+            bounds.width,
+            bounds.height,
+            translate_svg(&base_svg, center.x, center.y,),
+        );
+    }
 }
 
 #[derive(Debug)]

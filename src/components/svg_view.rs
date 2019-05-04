@@ -13,6 +13,6 @@ pub fn svg_view<T: yew::html::Component, TStyle>(
     );
 
     return html! {
-        <img class="dot-ring-img", src=img_base64_src, />
+        <img class="preview-image", src=img_base64_src, />
     };
 }

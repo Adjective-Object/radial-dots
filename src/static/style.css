@@ -65,19 +65,16 @@ input[type="color"] {
 
 /* Dot editor */
 
-.fieldset.dot-editor {
-  display: flex;
-}
-
-.fieldset.dot-editor > img {
-  margin-left: 1em;
-  width: 80px;
-}
-
 .fieldset {
+  display: flex;
   padding-bottom: 1em;
   font-size: 0.8em;
   padding-top: 0.5em;
+}
+
+.fieldset .preview-image {
+  margin-left: 1em;
+  width: 80px;
 }
 
 .fieldset label {
@@ -100,7 +97,7 @@ input[type="color"] {
   width: 100%;
 }
 
-.dot-ring-img {
+.preview-image {
   min-width: 0;
   min-height: 0;
   width: 100%;

@@ -1,5 +1,6 @@
 use crate::components::float_field_set::FloatFieldSet;
-use crate::fig::text_path::ArcStyle;
+use crate::components::svg_view::svg_view;
+use crate::fig::text_path::{ArcPreviewStyle, ArcStyle};
 use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRender};
 
 #[derive(PartialEq)]
@@ -74,27 +75,33 @@ impl Renderable<ArcStyleEditor> for ArcStyleEditor {
     fn view(&self) -> Html<Self> {
         return html! {
             <form class="arc-style-editor fieldset",>
-                <FloatFieldSet:
-                    human_name="Radius",
-                    input_name="arc-radius",
-                    value={self.arc_style.radius},
-                    max={50.0},
-                    on_input=|new_val| ArcStyleEditorMsg::UpdateRadius(new_val),
-                />
-                <FloatFieldSet:
-                    human_name="Arc Span",
-                    input_name="arc-span",
-                    value={self.arc_style.arc_percentage},
-                    max={1.0},
-                    on_input=|new_val| ArcStyleEditorMsg::UpdateArcPercentage(new_val),
-                />
-                <FloatFieldSet:
-                    human_name="Arc Offset",
-                    input_name="arc-offset",
-                    value={self.arc_style.arc_offset_percentage},
-                    max={1.0},
-                    on_input=|new_val| ArcStyleEditorMsg::UpdateArcOffsetPercentage(new_val),
-                />
+                <span class="fields",>
+                    <FloatFieldSet:
+                        human_name="Radius",
+                        input_name="arc-radius",
+                        value={self.arc_style.radius},
+                        max={50.0},
+                        on_input=|new_val| ArcStyleEditorMsg::UpdateRadius(new_val),
+                    />
+                    <FloatFieldSet:
+                        human_name="Arc Span",
+                        input_name="arc-span",
+                        value={self.arc_style.arc_percentage},
+                        max={1.0},
+                        on_input=|new_val| ArcStyleEditorMsg::UpdateArcPercentage(new_val),
+                    />
+                    <FloatFieldSet:
+                        human_name="Arc Offset",
+                        input_name="arc-offset",
+                        value={self.arc_style.arc_offset_percentage},
+                        max={1.0},
+                        on_input=|new_val| ArcStyleEditorMsg::UpdateArcOffsetPercentage(new_val),
+                    />
+                </span>
+                {svg_view(&self.arc_style, &ArcPreviewStyle {
+                    color: &"#EEEEEE",
+                    radius: 5.0,
+                 })}
             </form>
         };
     }
