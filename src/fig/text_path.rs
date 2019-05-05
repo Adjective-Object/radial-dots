@@ -7,7 +7,6 @@ use crate::svg::util::translate_svg;
 use crate::utf_to_binary::text_to_binary;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Default, Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct ArcStyle {
     pub radius: f64,

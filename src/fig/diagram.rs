@@ -2,9 +2,9 @@ use crate::drawing_style::DrawingStyle;
 use crate::fig::text_path::*;
 use crate::float_utils::fmax;
 use crate::geom::*;
+use crate::serializable_app_state::{serialize, SerializableAppState};
 use crate::svg::svg_drawable::{SvgFragment, SvgRenderer};
 use crate::svg::util::*;
-use crate::serializable_app_state::{SerializableAppState, serialize};
 
 use serde::{Deserialize, Serialize};
 
@@ -49,17 +49,17 @@ impl SvgRenderer<DrawingStyle> for Diagram {
             diagram: self,
             style: style,
         });
-
+        let escaped_serialized_content: String =
+            xml::escape::escape_str_attribute(&serialized_content).to_string();
 
         return format!(
             concat!(
                 "<svg ",
                 "xmlns='http://www.w3.org/2000/svg' ",
-                "xmlns:dots='dots' dots:config='{}'",
+                "xmlns:dots='dots' dots:config='{}' ",
                 "viewBox='{} {} {} {}'>{}</svg>",
             ),
-            // TODO escape the serialized content for safe insert into XML.
-            // serialized_content
+            escaped_serialized_content,
             diagram_bounds.x,
             diagram_bounds.y,
             diagram_bounds.width,

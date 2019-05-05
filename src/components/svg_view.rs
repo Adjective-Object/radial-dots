@@ -2,10 +2,7 @@ use crate::svg::svg_drawable::SvgRenderer;
 
 use yew::{html, Html};
 
-pub fn svg_data_url<TStyle>(
-    svg_renderer: &SvgRenderer<TStyle>,
-    style: &TStyle,
-) -> String {
+pub fn svg_data_url<TStyle>(svg_renderer: &SvgRenderer<TStyle>, style: &TStyle) -> String {
     let raw_svg_string: String = svg_renderer.as_standalone_svg(style);
     let img_base64_src: String = format!(
         "data:image/svg+xml;base64,{}",

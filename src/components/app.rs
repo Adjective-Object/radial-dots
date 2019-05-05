@@ -1,18 +1,21 @@
-use crate::components::svg_view::{svg_view, svg_data_url};
+use crate::components::error_toast::ErrorToast;
+use crate::components::svg_view::{svg_data_url, svg_view};
 use crate::components::text_path_style_editor::TextPathStyleEditor;
 use crate::drawing_style::{DrawingColors, DrawingStyle};
 use crate::fig::diagram::Diagram;
 use crate::fig::dot::Dot;
 use crate::fig::text_path::ArcStyle;
 use crate::fig::text_path::{TextPath, TextPathStyle};
+use crate::serializable_app_state::{get_state_from_document_string, DeserializedAppState};
+use stdweb::web::event::{DataTransfer, DataTransferItem, IDragEvent, IEvent};
 
-use serde::{Deserialize, Serialize};
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
 
-#[derive(Deserialize, Serialize)]
 pub struct App {
     style: DrawingStyle,
     diagram: Diagram,
+    error_toasts: Vec<ErrorToast>,
+    link: ComponentLink<App>,
 }
 
 pub enum AppMsg {
@@ -30,13 +33,28 @@ pub enum AppMsg {
     UpdateBackgroundColor(String),
     UpdateStrokeColor(String),
     UpdateDiagramText(String),
+
+    TryDropDocument(DataTransfer),
+    ConsumeDroppedDocument(Result<DeserializedAppState, String>),
+    // All event handlers are required to return a message.
+    //
+    // In some cases, we don't want to generate a message and instead want to
+    // interact only with the event (e.g. preventing default for ondragover
+    // to allow for drag/drop events).
+    //
+    // Here we add a doNothing event so that we can satisfy that requirement
+    // without changing the data model
+    DoNothing,
 }
+
+
+static mut global_app: Option<&App> = None;
 
 impl Component for App {
     type Message = AppMsg;
     type Properties = ();
 
-    fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
         App {
             style: DrawingStyle {
                 color: DrawingColors {
@@ -88,6 +106,8 @@ impl Component for App {
                     },
                 ],
             },
+            error_toasts: Vec::new(),
+            link: link,
         }
     }
 
@@ -168,6 +188,43 @@ impl Component for App {
                 }
                 self.diagram.paths = new_text_paths;
             }
+            AppMsg::TryDropDocument(data_transfer) => {
+                if data_transfer.items().len() != 1 {
+                    self.error_toasts.push(ErrorToast {
+                        title: String::from("Error in Drag/Drop"),
+                        body: String::from("More than one DataTransferItem on DataTransfer"),
+                    });
+                    return true;
+                }
+
+                let transfer_item: DataTransferItem = data_transfer.items().index(0).unwrap();
+
+                // I'm stumped by the static lifetime requirement on this callback.
+                // I get why it exists, but the safer version depends on futures, which
+                // doesn't compile against my rust for whatever reason.
+                global_app = unsafe{ std::mem::transumte(Some(self) };
+                transfer_item.get_as_string(|value: String| {
+                    let maybe_state = get_state_from_document_string(&value);
+                    match global_app {
+                        Some(app) => app.link.send_self(AppMsg::ConsumeDroppedDocument(maybe_state)),
+                        None => {},
+                    };
+                });
+                return false;
+            }
+            AppMsg::ConsumeDroppedDocument(maybe_doc) => match maybe_doc {
+                Ok(doc) => {
+                    self.diagram = doc.diagram;
+                    self.style = doc.style;
+                }
+                Err(err_message) => self.error_toasts.push(ErrorToast {
+                    title: String::from("Error Parsing dropped document"),
+                    body: err_message,
+                }),
+            },
+            AppMsg::DoNothing => {
+                return false;
+            }
         }
         true
     }
@@ -194,15 +251,26 @@ impl Renderable<App> for App {
             }
         });
 
-        let data_href: String = svg_data_url(
-            &self.diagram,
-            &self.style
-        );
+        let toasts = self.error_toasts.iter().map(|toast| html!{
+            <div class="error-toast",>
+                <span class="error-toast-title",>{toast.title.clone()}</span>
+                <span class="error-toast-body",>{toast.body.clone()}</span>
+            </div>
+        });
+
+        let data_href: String = svg_data_url(&self.diagram, &self.style);
 
         return html! {
             <>
                 <link rel="stylesheet", type="text/css", href="./style.css", />
-                <div class="app-split", style=background_style,>
+                <div class="error-toast-container",>
+                    {for toasts}
+                </div>
+                <div class="app-split",
+                     style=background_style,
+                     ondragover=|e| {e.prevent_default(); AppMsg::DoNothing},
+                     ondrop=|e| {e.prevent_default(); AppMsg::TryDropDocument(e.data_transfer().unwrap())},
+                     >
                     {svg_view(&self.diagram, &self.style)}
                     <div class="control-bar",>
                         <section class="fields-container",>
