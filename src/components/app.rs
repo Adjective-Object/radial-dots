@@ -48,8 +48,6 @@ pub enum AppMsg {
 }
 
 
-static mut global_app: Option<&App> = None;
-
 impl Component for App {
     type Message = AppMsg;
     type Properties = ();
@@ -199,17 +197,11 @@ impl Component for App {
 
                 let transfer_item: DataTransferItem = data_transfer.items().index(0).unwrap();
 
-                // I'm stumped by the static lifetime requirement on this callback.
-                // I get why it exists, but the safer version depends on futures, which
-                // doesn't compile against my rust for whatever reason.
-                global_app = unsafe{ std::mem::transumte(Some(self) };
-                transfer_item.get_as_string(|value: String| {
-                    let maybe_state = get_state_from_document_string(&value);
-                    match global_app {
-                        Some(app) => app.link.send_self(AppMsg::ConsumeDroppedDocument(maybe_state)),
-                        None => {},
-                    };
-                });
+                let value: String = transfer_item.get_as_string_future()
+                    .and_then(|val| {
+                        let maybe_state = get_state_from_document_string(&value);
+                        self.link.send_self(AppMsg::ConsumeDroppedDocument(maybe_state));
+                    });
                 return false;
             }
             AppMsg::ConsumeDroppedDocument(maybe_doc) => match maybe_doc {
