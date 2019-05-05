@@ -5,3 +5,4 @@ mod float_utils;
 mod geom;
 mod svg;
 mod utf_to_binary;
+mod serializable_app_state;

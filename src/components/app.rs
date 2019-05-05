@@ -1,4 +1,4 @@
-use crate::components::svg_view::svg_view;
+use crate::components::svg_view::{svg_view, svg_data_url};
 use crate::components::text_path_style_editor::TextPathStyleEditor;
 use crate::drawing_style::{DrawingColors, DrawingStyle};
 use crate::fig::diagram::Diagram;
@@ -6,8 +6,10 @@ use crate::fig::dot::Dot;
 use crate::fig::text_path::ArcStyle;
 use crate::fig::text_path::{TextPath, TextPathStyle};
 
+use serde::{Deserialize, Serialize};
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
 
+#[derive(Deserialize, Serialize)]
 pub struct App {
     style: DrawingStyle,
     diagram: Diagram,
@@ -192,32 +194,48 @@ impl Renderable<App> for App {
             }
         });
 
+        let data_href: String = svg_data_url(
+            &self.diagram,
+            &self.style
+        );
+
         return html! {
             <>
                 <link rel="stylesheet", type="text/css", href="./style.css", />
                 <div class="app-split", style=background_style,>
                     {svg_view(&self.diagram, &self.style)}
                     <div class="control-bar",>
-                        <textarea
-                            class="control-textarea",
-                            oninput=|e| AppMsg::UpdateDiagramText(e.value),>
-                            {App::get_paths_as_multiline_text(
-                                &self.diagram.paths,
-                            )}
-                        </textarea>
-                        <TextPathStyleEditor:
-                            header="Defaults",
-                            style={TextPathStyle {
-                                one_dot_style: Some(self.style.default_one_dot_style.clone()),
-                                zero_dot_style: Some(self.style.default_zero_dot_style.clone()),
-                                arc_style: Some(self.style.default_arc_style.clone()),
-                            }},
-                            on_zero_dot_updated=|dot| AppMsg::UpdateDefaultZeroDotStyle(dot),
-                            on_one_dot_updated=|dot| AppMsg::UpdateDefaultOneDotStyle(dot),
-                            on_arc_style_updated=|arc| AppMsg::UpdateDefaultArcStyle(arc),
-                            />
-                        <hr class="controls-divider", />
-                        {for path_styles}
+                        <section class="fields-container",>
+                            <textarea
+                                class="control-textarea",
+                                oninput=|e| AppMsg::UpdateDiagramText(e.value),>
+                                {App::get_paths_as_multiline_text(
+                                    &self.diagram.paths,
+                                )}
+                            </textarea>
+                            <TextPathStyleEditor:
+                                header="Defaults",
+                                style={TextPathStyle {
+                                    one_dot_style: Some(self.style.default_one_dot_style.clone()),
+                                    zero_dot_style: Some(self.style.default_zero_dot_style.clone()),
+                                    arc_style: Some(self.style.default_arc_style.clone()),
+                                }},
+                                on_zero_dot_updated=|dot| AppMsg::UpdateDefaultZeroDotStyle(dot),
+                                on_one_dot_updated=|dot| AppMsg::UpdateDefaultOneDotStyle(dot),
+                                on_arc_style_updated=|arc| AppMsg::UpdateDefaultArcStyle(arc),
+                                />
+                            <hr class="controls-divider", />
+                            {for path_styles}
+                            </section>
+                        <section class="download-container",>
+                            <a
+                                class="download-button",
+                                download="radial-dots.svg",
+                                href={data_href},
+                                >
+                                {"Download"}
+                            </a>
+                        </section>
                     </div>
                 </div>
             </>
