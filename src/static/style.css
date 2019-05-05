@@ -24,13 +24,20 @@ html {
 .control-bar {
   color: white;
   background-color: #222222;
-  padding: 1em;
-  overflow-y: auto;
   width: 400px;
 
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+}
+
+.fields-container {
+  display: flex;
+  flex-direction: column;
   justify-content: stretch;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1em;
 }
 
 input[type="number"],
@@ -152,4 +159,49 @@ input[type="color"] {
   margin-bottom: 0.25em;
   font-size: 1.25em;
   border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.download-container {
+  padding: 1em;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.download-button {
+  background-color: #eeeeee;
+  color: #222222;
+  padding: 0.5em 1em 0.5em 1em;
+  font-size: 1.25em;
+}
+
+.error-toast {
+  color: white;
+  background-color: #f23545;
+  padding: 0.5em;
+  display: flex;
+}
+
+.error-toast-title {
+  margin-right: 1em;
+  font-weight: bold;
+  align-items: center;
+}
+
+.error-toast-body {
+  flex-grow: 1;
+}
+
+.error-toast-dismiss-button {
+  float: right;
+  appearance: none;
+  color: inherit;
+  outline: none;
+  display: block;
+  font-family: monospace;
+  background: transparent;
+  border: 1px solid white;
+  padding-left: 1em;
+  padding-right: 1em;
+  user-select: none;
 }

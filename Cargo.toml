@@ -5,10 +5,17 @@ authors = ["Maxwell Huang-Hobbs <mhuan13@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-stdweb = "0.4.2"
+stdweb = {version = "0.4.17", features = ["futures-support"]}
 yew = "0.6.0"
 base64 = "0.10.1"
 wee_alloc = "0.4.4"
+serde = {version = "1.0.90", features = ["derive"]}
+serde_json = "1.0.39"
+xml-rs = "0.8"
+# futures-core-preview = "0.3.0-alpha.15"
+futures-util-preview = "0.3.0-alpha.15"
+# futures-preview = "0.3.0-alpha.15"
+futures = "0.1.26"
 
 [profile.release]
 lto = true

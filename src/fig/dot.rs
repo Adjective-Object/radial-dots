@@ -2,8 +2,9 @@ use crate::float_utils::fmax;
 use crate::geom::{Rect, Vector2};
 use crate::svg::svg_drawable::{SvgFragment, SvgRenderer};
 use crate::svg::util::translate_svg;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Deserialize, Serialize)]
 pub struct Dot {
     pub circle_radius: f64,
     pub ring_radius: f64,

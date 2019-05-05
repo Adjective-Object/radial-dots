@@ -2,10 +2,13 @@ use crate::drawing_style::DrawingStyle;
 use crate::fig::text_path::*;
 use crate::float_utils::fmax;
 use crate::geom::*;
+use crate::serializable_app_state::{serialize, SerializableAppState};
 use crate::svg::svg_drawable::{SvgFragment, SvgRenderer};
 use crate::svg::util::*;
 
-#[derive(Debug)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Diagram {
     pub paths: Vec<TextPath>,
     pub diagram_padding: f64,
@@ -42,8 +45,21 @@ impl SvgRenderer<DrawingStyle> for Diagram {
             ));
         }
 
+        let serialized_content = serialize(&SerializableAppState {
+            diagram: self,
+            style: style,
+        });
+        let escaped_serialized_content: String =
+            xml::escape::escape_str_attribute(&serialized_content).to_string();
+
         return format!(
-            "<svg xmlns='http://www.w3.org/2000/svg' viewBox='{} {} {} {}'>{}</svg>",
+            concat!(
+                "<svg ",
+                "xmlns='http://www.w3.org/2000/svg' ",
+                "xmlns:dots='dots' dots:config='{}' ",
+                "viewBox='{} {} {} {}'>{}</svg>",
+            ),
+            escaped_serialized_content,
             diagram_bounds.x,
             diagram_bounds.y,
             diagram_bounds.width,

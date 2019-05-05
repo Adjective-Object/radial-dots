@@ -5,8 +5,9 @@ use crate::geom::{Rect, Vector2};
 use crate::svg::svg_drawable::{SvgFragment, SvgRenderer};
 use crate::svg::util::translate_svg;
 use crate::utf_to_binary::text_to_binary;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct ArcStyle {
     pub radius: f64,
     pub arc_percentage: f64,
@@ -80,13 +81,13 @@ impl<'a> SvgRenderer<ArcPreviewStyle<'a>> for ArcStyle {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct TextPath {
     pub style: TextPathStyle,
     pub text: String,
 }
 
-#[derive(Debug, Default, PartialEq, Clone)]
+#[derive(Debug, Default, PartialEq, Clone, Deserialize, Serialize)]
 pub struct TextPathStyle {
     pub zero_dot_style: Option<Dot>,
     pub one_dot_style: Option<Dot>,
