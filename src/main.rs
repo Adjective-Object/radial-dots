@@ -1,4 +1,3 @@
-#![feature(futures_api)]
 extern crate wee_alloc;
 
 mod components;
@@ -10,7 +9,6 @@ mod serializable_app_state;
 mod svg;
 mod utf_to_binary;
 use crate::components::app::App;
-
 
 // Use `wee_alloc` as the global allocator.
 #[global_allocator]

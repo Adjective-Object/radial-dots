@@ -174,3 +174,34 @@ input[type="color"] {
   padding: 0.5em 1em 0.5em 1em;
   font-size: 1.25em;
 }
+
+.error-toast {
+  color: white;
+  background-color: #f23545;
+  padding: 0.5em;
+  display: flex;
+}
+
+.error-toast-title {
+  margin-right: 1em;
+  font-weight: bold;
+  align-items: center;
+}
+
+.error-toast-body {
+  flex-grow: 1;
+}
+
+.error-toast-dismiss-button {
+  float: right;
+  appearance: none;
+  color: inherit;
+  outline: none;
+  display: block;
+  font-family: monospace;
+  background: transparent;
+  border: 1px solid white;
+  padding-left: 1em;
+  padding-right: 1em;
+  user-select: none;
+}

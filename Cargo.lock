@@ -114,6 +114,11 @@ version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "futures"
+version = "0.1.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "futures-channel-preview"
 version = "0.3.0-alpha.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -256,6 +261,8 @@ name = "radial_dots"
 version = "0.1.1"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures-util-preview 0.3.0-alpha.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
  "stdweb 0.4.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -546,6 +553,7 @@ dependencies = [
 "checksum failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "795bd83d3abeb9220f257e597aa0080a508b27533824adf336529648f6abf7e2"
 "checksum failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "ea1063915fd7ef4309e222a5a07cf9c319fb9c7836b1f89b85458672dbb127e1"
 "checksum fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "2fad85553e09a6f881f739c29f0b00b0f01357c743266d478b68951ce23285f3"
+"checksum futures 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)" = "62941eff9507c8177d448bd83a44d9b9760856e184081d8cd79ba9f03dd24981"
 "checksum futures-channel-preview 0.3.0-alpha.15 (registry+https://github.com/rust-lang/crates.io-index)" = "edf150887ba490560f3d732e479a383ca4b8696af98651806d3f4edc1d968585"
 "checksum futures-core-preview 0.3.0-alpha.15 (registry+https://github.com/rust-lang/crates.io-index)" = "10a3833d58fd08b3a40203613ed3a93c8bc0bc0181af5dd6422a0e08df1bfa68"
 "checksum futures-executor-preview 0.3.0-alpha.15 (registry+https://github.com/rust-lang/crates.io-index)" = "0a75c64f20734619b4668e87f902544ce8c108dfcb6c9b6b2fcefdd1a848c15a"

@@ -7,15 +7,24 @@ use crate::fig::dot::Dot;
 use crate::fig::text_path::ArcStyle;
 use crate::fig::text_path::{TextPath, TextPathStyle};
 use crate::serializable_app_state::{get_state_from_document_string, DeserializedAppState};
-use stdweb::web::event::{DataTransfer, DataTransferItem, IDragEvent, IEvent};
+use stdweb::web::{
+    event::{
+        DataTransfer, DataTransferItem, DataTransferItemKind, IDragEvent, IEvent, LoadEndEvent,
+    },
+    File, FileReader, FileReaderResult, IEventTarget,
+};
+use yew::{
+    html, services::ConsoleService, Component, ComponentLink, Html, Renderable, ShouldRender,
+};
 
-use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
+static mut CURRENT_APP_REF: Option<&'static mut App> = None;
 
 pub struct App {
     style: DrawingStyle,
     diagram: Diagram,
     error_toasts: Vec<ErrorToast>,
     link: ComponentLink<App>,
+    console: ConsoleService,
 }
 
 pub enum AppMsg {
@@ -36,6 +45,9 @@ pub enum AppMsg {
 
     TryDropDocument(DataTransfer),
     ConsumeDroppedDocument(Result<DeserializedAppState, String>),
+
+    DismissErrorToast(usize),
+
     // All event handlers are required to return a message.
     //
     // In some cases, we don't want to generate a message and instead want to
@@ -46,7 +58,6 @@ pub enum AppMsg {
     // without changing the data model
     DoNothing,
 }
-
 
 impl Component for App {
     type Message = AppMsg;
@@ -106,6 +117,7 @@ impl Component for App {
             },
             error_toasts: Vec::new(),
             link: link,
+            console: ConsoleService::new(),
         }
     }
 
@@ -187,33 +199,124 @@ impl Component for App {
                 self.diagram.paths = new_text_paths;
             }
             AppMsg::TryDropDocument(data_transfer) => {
+                self.console.log("TryDropDocument");
                 if data_transfer.items().len() != 1 {
+                    self.console.log("length not right");
                     self.error_toasts.push(ErrorToast {
                         title: String::from("Error in Drag/Drop"),
-                        body: String::from("More than one DataTransferItem on DataTransfer"),
+                        body: format!(
+                            "Found {num} Data Transfer Items, expected 1",
+                            num = data_transfer.items().len()
+                        ),
                     });
                     return true;
                 }
 
                 let transfer_item: DataTransferItem = data_transfer.items().index(0).unwrap();
 
-                let value: String = transfer_item.get_as_string_future()
-                    .and_then(|val| {
-                        let maybe_state = get_state_from_document_string(&value);
-                        self.link.send_self(AppMsg::ConsumeDroppedDocument(maybe_state));
+                if transfer_item.ty() != "image/svg+xml" {
+                    self.error_toasts.push(ErrorToast {
+                        title: String::from("Error in Drag/Drop"),
+                        body: format!("Dropped document had wrong mimetype ({mime}), expected \"image/svg+xml\"", mime = transfer_item.ty()),
                     });
+
+                    return true;
+                }
+
+                if transfer_item.kind() != DataTransferItemKind::File {
+                    self.error_toasts.push(ErrorToast {
+                        title: String::from("Error in Drag/Drop"),
+                        body: format!("Dropped item was not a file"),
+                    });
+
+                    return true;
+                }
+
+                let file_option: Option<File> = transfer_item.get_as_file();
+                let file_blob: File = match file_option {
+                    Some(f) => f,
+                    None => {
+                        self.error_toasts.push(ErrorToast {
+                            title: String::from("Error in Drag/Drop"),
+                            body: String::from("Failed to unpack document"),
+                        });
+                        return true;
+                    }
+                };
+
+                let reader: FileReader = FileReader::new();
+                match reader.read_as_text(&file_blob) {
+                    Ok(_) => {}
+                    Err(_) => {
+                        self.error_toasts.push(ErrorToast {
+                            title: String::from("Error in Drag/Drop"),
+                            body: String::from("Failed to read document body"),
+                        });
+                        return true;
+                    }
+                }
+
+                unsafe {
+                    let self_as_static: &'static mut App = std::mem::transmute(self);
+                    CURRENT_APP_REF = Some(self_as_static);
+                }
+
+                let reader_clone = reader.clone();
+                let reader_callback = move |_: LoadEndEvent| unsafe {
+                    let app_ref: &'static mut App = match &mut CURRENT_APP_REF {
+                        Some(x) => x,
+                        None => return,
+                    };
+
+                    let body_string: String = match reader.result() {
+                        Some(res) => match res {
+                            FileReaderResult::String(s) => s,
+                            FileReaderResult::ArrayBuffer(_) => {
+                                app_ref.link.send_self(AppMsg::ConsumeDroppedDocument(Err(
+                                    String::from(
+                                        "Got ArrayBuffer from FileReader. Expected String.",
+                                    ),
+                                )));
+                                return;
+                            }
+                        },
+                        None => {
+                            app_ref.link.send_self(AppMsg::ConsumeDroppedDocument(Err(
+                                String::from("Failed to get document body from reader body"),
+                            )));
+                            return;
+                        }
+                    };
+
+                    let maybe_state = get_state_from_document_string(&body_string);
+                    app_ref
+                        .link
+                        .send_self(AppMsg::ConsumeDroppedDocument(maybe_state));
+                };
+
+                reader_clone.add_event_listener(reader_callback);
+
                 return false;
             }
             AppMsg::ConsumeDroppedDocument(maybe_doc) => match maybe_doc {
                 Ok(doc) => {
+                    self.console.log("Consume Drop Document");
                     self.diagram = doc.diagram;
                     self.style = doc.style;
                 }
-                Err(err_message) => self.error_toasts.push(ErrorToast {
-                    title: String::from("Error Parsing dropped document"),
-                    body: err_message,
-                }),
+                Err(err_message) => {
+                    self.console.log("Fail to consume dropped document");
+                    self.error_toasts.push(ErrorToast {
+                        title: String::from("Error Parsing dropped document"),
+                        body: err_message,
+                    });
+                }
             },
+            AppMsg::DismissErrorToast(idx) => {
+                if idx < self.error_toasts.len() {
+                    self.error_toasts.remove(idx);
+                }
+            }
             AppMsg::DoNothing => {
                 return false;
             }
@@ -243,11 +346,16 @@ impl Renderable<App> for App {
             }
         });
 
-        let toasts = self.error_toasts.iter().map(|toast| html!{
-            <div class="error-toast",>
-                <span class="error-toast-title",>{toast.title.clone()}</span>
-                <span class="error-toast-body",>{toast.body.clone()}</span>
-            </div>
+        let toasts = self.error_toasts.iter().enumerate().map(|(index, toast)| {
+            html! {
+                <div class="error-toast",>
+                    <span class="error-toast-title",>{toast.title.clone()}</span>
+                    <span class="error-toast-body",>{toast.body.clone()}</span>
+                    <button class="error-toast-dismiss-button", onclick=|_| AppMsg::DismissErrorToast(index),>
+                        {"x"}
+                    </button>
+                </div>
+            }
         });
 
         let data_href: String = svg_data_url(&self.diagram, &self.style);
