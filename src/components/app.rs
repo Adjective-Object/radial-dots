@@ -6,11 +6,10 @@ use crate::fig::diagram::Diagram;
 use crate::fig::dot::Dot;
 use crate::fig::text_path::ArcStyle;
 use crate::fig::text_path::{TextPath, TextPathStyle};
-use crate::serializable_app_state::{get_state_from_document_string, DeserializedAppState};
 use crate::log;
+use crate::serializable_app_state::{get_state_from_document_string, DeserializedAppState};
+use web_sys::{DataTransfer, DataTransferItem, File};
 use yew::prelude::*;
-use web_sys::wasm_bindgen::prelude::*;
-use web_sys::{DataTransfer, DataTransferItem, File, FileReader};
 
 pub struct App {
     style: DrawingStyle,
@@ -40,11 +39,59 @@ pub enum AppMsg {
     DismissErrorToast(usize),
 }
 
+// Gets a file from a data transfer object, assuming the
+fn get_file_from_data_transfer(
+    expected_mime: &str,
+    data_transfer: DataTransfer,
+) -> Result<File, ErrorToast> {
+    if data_transfer.items().length() != 1 {
+        log!("length not right");
+        return Err(ErrorToast {
+            title: String::from("Error in Drag/Drop"),
+            body: format!(
+                "Found {num} Data Transfer Items, expected 1",
+                num = data_transfer.items().length()
+            ),
+        });
+    }
+
+    let transfer_item: DataTransferItem = data_transfer.items().get(0).unwrap();
+
+    if transfer_item.type_() != expected_mime {
+        return Err(ErrorToast {
+            title: String::from("Error in Drag/Drop"),
+            body: format!(
+                "Dropped document had wrong mimetype ({mime}), expected \"{expected_mime}\"",
+                mime = transfer_item.type_()
+            ),
+        });
+    }
+
+    if transfer_item.kind() != "file" {
+        return Err(ErrorToast {
+            title: String::from("Error in Drag/Drop"),
+            body: format!("Dropped item was not a file"),
+        });
+    }
+
+    return match transfer_item.get_as_file() {
+        Ok(Some(file)) => Ok(file),
+        Ok(None) => Err(ErrorToast {
+            title: "Error in Drag/Drop".to_string(),
+            body: format!("Failed converting DataTransferItem to file: got None file?"),
+        }),
+        Err(e) => Err(ErrorToast {
+            title: "Error in Drag/Drop".to_string(),
+            body: format!("Failed converting DataTransferItem to file: {e:#?}"),
+        }),
+    };
+}
+
 impl Component for App {
     type Message = AppMsg;
     type Properties = ();
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         App {
             style: DrawingStyle {
                 color: DrawingColors {
@@ -136,7 +183,6 @@ impl Component for App {
                 self.diagram.paths[index].style.arc_style =
                     Some(self.style.default_arc_style.clone())
             }
-
             AppMsg::UpdateBackgroundColor(new_color) => {
                 self.style.color.background_color = new_color;
             }
@@ -179,101 +225,29 @@ impl Component for App {
             }
             AppMsg::TryDropDocument(data_transfer) => {
                 log!("TryDropDocument");
-                if data_transfer.items().length() != 1 {
-                    log!("length not right");
-                    self.error_toasts.push(ErrorToast {
-                        title: String::from("Error in Drag/Drop"),
-                        body: format!(
-                            "Found {num} Data Transfer Items, expected 1",
-                            num = data_transfer.items().length()
-                        ),
-                    });
-                    return true;
-                }
-
-                let transfer_item: DataTransferItem = data_transfer.items().get(0).unwrap();
-
-                if transfer_item.type_() != "image/svg+xml" {
-                    self.error_toasts.push(ErrorToast {
-                        title: String::from("Error in Drag/Drop"),
-                        body: format!("Dropped document had wrong mimetype ({mime}), expected \"image/svg+xml\"", mime = transfer_item.type_()),
-                    });
-
-                    return true;
-                }
-
-                if transfer_item.kind() != "file" {
-                    self.error_toasts.push(ErrorToast {
-                        title: String::from("Error in Drag/Drop"),
-                        body: format!("Dropped item was not a file"),
-                    });
-
-                    return true;
-                }
-
-                let file_option: Option<File> = transfer_item.get_as_file().unwrap();
-                let file_blob: File = match file_option {
-                    Some(f) => f,
-                    None => {
-                        self.error_toasts.push(ErrorToast {
-                            title: String::from("Error in Drag/Drop"),
-                            body: String::from("Failed to unpack document"),
-                        });
+                let file = match get_file_from_data_transfer("image/svg+xml", data_transfer) {
+                    Ok(f) => f,
+                    Err(err_toast) => {
+                        self.error_toasts.push(err_toast);
                         return true;
                     }
                 };
 
-                let reader: FileReader = FileReader::new().expect("should be able to construct a FileReader");
-                match reader.read_as_text(&file_blob) {
-                    Ok(_) => {}
-                    Err(_) => {
-                        self.error_toasts.push(ErrorToast {
-                            title: String::from("Error in Drag/Drop"),
-                            body: String::from("Failed to read document body"),
-                        });
-                        return true;
+                let cb = ctx.link().callback(|msg: AppMsg| msg);
+                gloo_file::callbacks::read_as_text(&gloo_file::Blob::from(file), move |res| {
+                    match res {
+                        Ok(file_contents) => {
+                            cb.emit(AppMsg::ConsumeDroppedDocument(
+                                get_state_from_document_string(&file_contents),
+                            ));
+                        }
+                        Err(read_err) => {
+                            cb.emit(AppMsg::ConsumeDroppedDocument(Err(format!(
+                                "Failed to get document body from reader body: {read_err:#?}",
+                            ))));
+                        }
                     }
-                }
-
-                let reader_clone = reader.clone();
-                let link = ctx.link();
-                let reader_callback = move |_: Event| {
-                    let body_string: String = match reader.result() {
-                        Ok(res) => {
-                            if res.is_string() {
-                                res.as_string().unwrap()
-                            } else {
-                                let res_js_typeof = res.js_typeof().as_string().expect("typeof should always give a string jsvalue");
-                                ctx.link().send_message(AppMsg::ConsumeDroppedDocument(Err(
-                                    String::from(
-                                        format!("Got unexpected type {res_js_typeof} from FileReader. Expected String."),
-                                    ),
-                                )));
-                                "".to_string()
-                            }
-                        }
-                        Err(e) => {
-                            link.send_message(AppMsg::ConsumeDroppedDocument(Err(
-                                String::from("Failed to get document body from reader body"),
-                            )));
-                            return;
-                        }
-                    };
-
-                    let maybe_state = get_state_from_document_string(&body_string);
-                    link.send_message(AppMsg::ConsumeDroppedDocument(maybe_state));
-                };
-
-                let cb = Closure::wrap(
-                    Box::new(reader_callback) as Box<dyn FnMut(_)>
-                );
-                reader_clone.add_event_listener_with_callback("loadend", cb.as_ref().unchecked_ref());
-                // leak this callback (drop the closure object without destorying the js closure)
-                // TODO: this should be bound to the FileReader and dismissed after the callback is called?
-                //
-                // Not sure how to do that though.
-                cb.forget();
-
+                });
                 return false;
             }
             AppMsg::ConsumeDroppedDocument(maybe_doc) => match maybe_doc {
@@ -307,13 +281,13 @@ impl Component for App {
                 <TextPathStyleEditor
                     header={format!{"\"{}\"", path.text}}
                     style={path.style.clone()}
-                    on_zero_dot_updated={ctx.link().callback(|dot| AppMsg::UpdatePathZeroDotStyle(index, dot))}
-                    on_one_dot_updated={ctx.link().callback(|dot| AppMsg::UpdatePathOneDotStyle(index, dot))}
-                    on_arc_style_updated={ctx.link().callback(|arc| AppMsg::UpdatePathArcStyle(index, arc))}
+                    on_zero_dot_updated={ctx.link().callback(move |dot| AppMsg::UpdatePathZeroDotStyle(index, dot))}
+                    on_one_dot_updated={ctx.link().callback(move |dot| AppMsg::UpdatePathOneDotStyle(index, dot))}
+                    on_arc_style_updated={ctx.link().callback(move |arc| AppMsg::UpdatePathArcStyle(index, arc))}
 
-                    on_add_one_dot_override={ctx.link().callback(|_| AppMsg::InitPathOneDotStyle(index))}
-                    on_add_zero_dot_override={ctx.link().callback(|_| AppMsg::InitPathZeroDotStyle(index))}
-                    on_add_arc_style_override={ctx.link().callback(|_| AppMsg::InitPathArcStyle(index))}
+                    on_add_one_dot_override={ctx.link().callback(move |_| AppMsg::InitPathOneDotStyle(index))}
+                    on_add_zero_dot_override={ctx.link().callback(move |_| AppMsg::InitPathZeroDotStyle(index))}
+                    on_add_arc_style_override={ctx.link().callback(move |_| AppMsg::InitPathArcStyle(index))}
                     can_remove={true}
                     />
             }
@@ -324,7 +298,7 @@ impl Component for App {
                 <div class="error-toast">
                     <span class="error-toast-title">{toast.title.clone()}</span>
                     <span class="error-toast-body">{toast.body.clone()}</span>
-                    <button class="error-toast-dismiss-button" onclick={ctx.link().callback(|_| AppMsg::DismissErrorToast(index))}>
+                    <button class="error-toast-dismiss-button" onclick={ctx.link().callback(move |_| AppMsg::DismissErrorToast(index))}>
                         {"x"}
                     </button>
                 </div>

@@ -11,6 +11,8 @@ serde = {version = "1.0.90", features = ["derive"]}
 serde_json = "1.0.39"
 xml-rs = "0.8"
 web-sys={ version = "0.3", features = ["File", "DragEvent", "DataTransfer", "DataTransferItemList", "DataTransferItem"]}
+gloo-file = "0.3.0"
+lol_alloc = "0.4.0"
 
 [profile.release]
 lto = true

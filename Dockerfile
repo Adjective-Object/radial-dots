@@ -14,3 +14,6 @@ RUN chmod -R +777 /usr/local/cargo/registry
 
 WORKDIR /app
 COPY . .
+
+RUN rustup component add clippy rustfmt
+RUN rustup target add wasm32-unknown-unknown

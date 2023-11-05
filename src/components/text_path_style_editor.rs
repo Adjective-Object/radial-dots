@@ -5,17 +5,6 @@ use crate::fig::text_path::{ArcStyle, TextPathStyle};
 use yew::prelude::*;
 
 pub struct TextPathStyleEditor {
-    pub style: TextPathStyle,
-    pub header: String,
-    pub on_one_dot_updated: Callback<Option<Dot>>,
-    pub on_zero_dot_updated: Callback<Option<Dot>>,
-    pub on_arc_style_updated: Callback<Option<ArcStyle>>,
-
-    pub on_add_one_dot_override: Option<Callback<()>>,
-    pub on_add_zero_dot_override: Option<Callback<()>>,
-    pub on_add_arc_style_override: Option<Callback<()>>,
-
-    pub can_remove: bool,
     pub collapsed: bool,
 }
 
@@ -24,9 +13,9 @@ pub struct TextPathStyleEditorProps {
     pub style: TextPathStyle,
     pub header: String,
 
-    pub on_one_dot_updated: Option<Callback<Option<Dot>>>,
-    pub on_zero_dot_updated: Option<Callback<Option<Dot>>>,
-    pub on_arc_style_updated: Option<Callback<Option<ArcStyle>>>,
+    pub on_one_dot_updated: Callback<Option<Dot>>,
+    pub on_zero_dot_updated: Callback<Option<Dot>>,
+    pub on_arc_style_updated: Callback<Option<ArcStyle>>,
 
     #[prop_or(None)]
     pub on_add_one_dot_override: Option<Callback<()>>,
@@ -54,94 +43,55 @@ impl Component for TextPathStyleEditor {
     type Message = TextPathStyleEditorMsg;
     type Properties = TextPathStyleEditorProps;
 
-    fn create(ctx: &Context<Self>) -> Self {
-        let props = ctx.props();
+    fn create(_ctx: &Context<Self>) -> Self {
         return Self{
-            style: props.style,
-            header: props.header,
             collapsed: false,
-            on_one_dot_updated: match props.on_one_dot_updated {
-                Some(x) => x,
-                None => panic!("on_one_dot_updated must be specified"),
-            },
-            on_zero_dot_updated: match props.on_zero_dot_updated {
-                Some(x) => x,
-                None => panic!("on_zero_dot_updated must be specified"),
-            },
-            on_arc_style_updated: match props.on_arc_style_updated {
-                Some(x) => x,
-                None => panic!("on_arc_style_updated must be specified"),
-            },
-            on_add_one_dot_override : props.on_add_one_dot_override,
-            on_add_zero_dot_override : props.on_add_zero_dot_override,
-            on_add_arc_style_override : props.on_add_arc_style_override,
-            can_remove: props.can_remove,
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        let props = ctx.props();
         match msg {
-            TextPathStyleEditorMsg::OneDotUpdated(dot) => self.on_one_dot_updated.emit(dot),
-            TextPathStyleEditorMsg::ZeroDotUpdated(dot) => self.on_zero_dot_updated.emit(dot),
+            TextPathStyleEditorMsg::OneDotUpdated(dot) => props.on_one_dot_updated.emit(dot),
+            TextPathStyleEditorMsg::ZeroDotUpdated(dot) => props.on_zero_dot_updated.emit(dot),
             TextPathStyleEditorMsg::ArcStyleUpdated(arc_style) => {
-                self.on_arc_style_updated.emit(arc_style)
+                props.on_arc_style_updated.emit(arc_style)
             }
             TextPathStyleEditorMsg::ToggleCollapsed => {
                 self.collapsed = !self.collapsed;
                 return true;
             }
-            TextPathStyleEditorMsg::OnAddOneDot => match &self.on_add_one_dot_override {
+            TextPathStyleEditorMsg::OnAddOneDot => match &props.on_add_one_dot_override {
                 Some(x) => x.emit(()),
-                None => {}
-            },
-            TextPathStyleEditorMsg::OnAddZeroDot => match &self.on_add_zero_dot_override {
+                None => {},
+            }
+            TextPathStyleEditorMsg::OnAddZeroDot => match &props.on_add_zero_dot_override {
                 Some(x) => x.emit(()),
-                None => {}
-            },
-            TextPathStyleEditorMsg::OnAddArcStyle => match &self.on_add_arc_style_override {
+                None => {},
+            }
+            TextPathStyleEditorMsg::OnAddArcStyle => match &props.on_add_arc_style_override {
                 Some(x) => x.emit(()),
-                None => {}
-            },
+                None => {},
+            }
         };
 
         false // update given in onChange in parent state
     }
 
-    fn changed(&mut self, _ctx: &Context<Self>, props: &Self::Properties) -> bool {
-        let should_render = props.style != self.style
-            || props.header != self.header
-            || props.can_remove != self.can_remove;
-        if props.style != self.style {
-            self.style = props.style;
-        }
-        self.header = props.header;
-
-        self.on_one_dot_updated = match props.on_one_dot_updated {
-            Some(x) => x,
-            None => panic!("on_one_dot_updated must be specified"),
-        };
-        self.on_zero_dot_updated = match props.on_zero_dot_updated {
-            Some(x) => x,
-            None => panic!("on_zero_dot_updated must be specified"),
-        };
-        self.on_arc_style_updated = match props.on_arc_style_updated {
-            Some(x) => x,
-            None => panic!("on_arc_style_updated must be specified"),
-        };
-
-        self.on_add_one_dot_override = props.on_add_one_dot_override;
-        self.on_add_zero_dot_override = props.on_add_zero_dot_override;
-        self.on_add_arc_style_override = props.on_add_arc_style_override;
-        self.can_remove = props.can_remove;
-
+    fn changed(&mut self, ctx: &Context<Self>, props: &Self::Properties) -> bool {
+        let old_props = ctx.props();
+        let should_render = props.style != old_props.style
+            || props.header != old_props.header
+            || props.can_remove != old_props.can_remove;
         return should_render;
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let props = ctx.props();
         let link = ctx.link();
-        let zero_dot_dom = match &self.style.zero_dot_style {
+        let zero_dot_dom = match &props.style.zero_dot_style {
             Some(dot) => html! {<section>
-                {if self.can_remove {
+                {if props.can_remove {
                     html!{
                         <button
                             class="remove-override"
@@ -177,9 +127,9 @@ impl Component for TextPathStyleEditor {
             }
         };
 
-        let one_dot_dom = match &self.style.one_dot_style {
+        let one_dot_dom = match &props.style.one_dot_style {
             Some(dot) => html! {<section>
-                {if self.can_remove {
+                {if props.can_remove {
                     html!{
                         <button
                             class="remove-override"
@@ -215,9 +165,9 @@ impl Component for TextPathStyleEditor {
             }
         };
 
-        let arc_dom = match &self.style.arc_style {
+        let arc_dom = match &props.style.arc_style {
             Some(arc) => html! {<section>
-                {if self.can_remove {
+                {if props.can_remove {
                     html!{
                         <button class="remove-override" onclick={link.callback(|_| TextPathStyleEditorMsg::ArcStyleUpdated(None))}>
                             {"x"}
@@ -254,7 +204,7 @@ impl Component for TextPathStyleEditor {
                     onclick={link.callback(|_| TextPathStyleEditorMsg::ToggleCollapsed)}>
                     {if self.collapsed {"▼"} else {"▲"}}
                 </button>
-                <h2 class="text-path-header">{&self.header}</h2>
+                <h2 class="text-path-header">{&props.header}</h2>
                 {if self.collapsed {
                     html!{<></>}
                 } else {html!{
