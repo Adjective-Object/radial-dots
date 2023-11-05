@@ -7,24 +7,15 @@ use crate::fig::dot::Dot;
 use crate::fig::text_path::ArcStyle;
 use crate::fig::text_path::{TextPath, TextPathStyle};
 use crate::serializable_app_state::{get_state_from_document_string, DeserializedAppState};
-use stdweb::web::{
-    event::{
-        DataTransfer, DataTransferItem, DataTransferItemKind, IDragEvent, IEvent, LoadEndEvent,
-    },
-    File, FileReader, FileReaderResult, IEventTarget,
-};
-use yew::{
-    html, services::ConsoleService, Component, ComponentLink, Html, Renderable, ShouldRender,
-};
-
-static mut CURRENT_APP_REF: Option<&'static mut App> = None;
+use crate::log;
+use yew::prelude::*;
+use web_sys::wasm_bindgen::prelude::*;
+use web_sys::{DataTransfer, DataTransferItem, File, FileReader};
 
 pub struct App {
     style: DrawingStyle,
     diagram: Diagram,
     error_toasts: Vec<ErrorToast>,
-    link: ComponentLink<App>,
-    console: ConsoleService,
 }
 
 pub enum AppMsg {
@@ -47,23 +38,13 @@ pub enum AppMsg {
     ConsumeDroppedDocument(Result<DeserializedAppState, String>),
 
     DismissErrorToast(usize),
-
-    // All event handlers are required to return a message.
-    //
-    // In some cases, we don't want to generate a message and instead want to
-    // interact only with the event (e.g. preventing default for ondragover
-    // to allow for drag/drop events).
-    //
-    // Here we add a doNothing event so that we can satisfy that requirement
-    // without changing the data model
-    DoNothing,
 }
 
 impl Component for App {
     type Message = AppMsg;
     type Properties = ();
 
-    fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
         App {
             style: DrawingStyle {
                 color: DrawingColors {
@@ -116,12 +97,10 @@ impl Component for App {
                 ],
             },
             error_toasts: Vec::new(),
-            link: link,
-            console: ConsoleService::new(),
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             AppMsg::UpdateDefaultOneDotStyle(new_style) => match new_style {
                 Some(x) => self.style.default_one_dot_style = x,
@@ -199,31 +178,31 @@ impl Component for App {
                 self.diagram.paths = new_text_paths;
             }
             AppMsg::TryDropDocument(data_transfer) => {
-                self.console.log("TryDropDocument");
-                if data_transfer.items().len() != 1 {
-                    self.console.log("length not right");
+                log!("TryDropDocument");
+                if data_transfer.items().length() != 1 {
+                    log!("length not right");
                     self.error_toasts.push(ErrorToast {
                         title: String::from("Error in Drag/Drop"),
                         body: format!(
                             "Found {num} Data Transfer Items, expected 1",
-                            num = data_transfer.items().len()
+                            num = data_transfer.items().length()
                         ),
                     });
                     return true;
                 }
 
-                let transfer_item: DataTransferItem = data_transfer.items().index(0).unwrap();
+                let transfer_item: DataTransferItem = data_transfer.items().get(0).unwrap();
 
-                if transfer_item.ty() != "image/svg+xml" {
+                if transfer_item.type_() != "image/svg+xml" {
                     self.error_toasts.push(ErrorToast {
                         title: String::from("Error in Drag/Drop"),
-                        body: format!("Dropped document had wrong mimetype ({mime}), expected \"image/svg+xml\"", mime = transfer_item.ty()),
+                        body: format!("Dropped document had wrong mimetype ({mime}), expected \"image/svg+xml\"", mime = transfer_item.type_()),
                     });
 
                     return true;
                 }
 
-                if transfer_item.kind() != DataTransferItemKind::File {
+                if transfer_item.kind() != "file" {
                     self.error_toasts.push(ErrorToast {
                         title: String::from("Error in Drag/Drop"),
                         body: format!("Dropped item was not a file"),
@@ -232,7 +211,7 @@ impl Component for App {
                     return true;
                 }
 
-                let file_option: Option<File> = transfer_item.get_as_file();
+                let file_option: Option<File> = transfer_item.get_as_file().unwrap();
                 let file_blob: File = match file_option {
                     Some(f) => f,
                     None => {
@@ -244,7 +223,7 @@ impl Component for App {
                     }
                 };
 
-                let reader: FileReader = FileReader::new();
+                let reader: FileReader = FileReader::new().expect("should be able to construct a FileReader");
                 match reader.read_as_text(&file_blob) {
                     Ok(_) => {}
                     Err(_) => {
@@ -256,32 +235,25 @@ impl Component for App {
                     }
                 }
 
-                unsafe {
-                    let self_as_static: &'static mut App = std::mem::transmute(self);
-                    CURRENT_APP_REF = Some(self_as_static);
-                }
-
                 let reader_clone = reader.clone();
-                let reader_callback = move |_: LoadEndEvent| unsafe {
-                    let app_ref: &'static mut App = match &mut CURRENT_APP_REF {
-                        Some(x) => x,
-                        None => return,
-                    };
-
+                let link = ctx.link();
+                let reader_callback = move |_: Event| {
                     let body_string: String = match reader.result() {
-                        Some(res) => match res {
-                            FileReaderResult::String(s) => s,
-                            FileReaderResult::ArrayBuffer(_) => {
-                                app_ref.link.send_self(AppMsg::ConsumeDroppedDocument(Err(
+                        Ok(res) => {
+                            if res.is_string() {
+                                res.as_string().unwrap()
+                            } else {
+                                let res_js_typeof = res.js_typeof().as_string().expect("typeof should always give a string jsvalue");
+                                ctx.link().send_message(AppMsg::ConsumeDroppedDocument(Err(
                                     String::from(
-                                        "Got ArrayBuffer from FileReader. Expected String.",
+                                        format!("Got unexpected type {res_js_typeof} from FileReader. Expected String."),
                                     ),
                                 )));
-                                return;
+                                "".to_string()
                             }
-                        },
-                        None => {
-                            app_ref.link.send_self(AppMsg::ConsumeDroppedDocument(Err(
+                        }
+                        Err(e) => {
+                            link.send_message(AppMsg::ConsumeDroppedDocument(Err(
                                 String::from("Failed to get document body from reader body"),
                             )));
                             return;
@@ -289,23 +261,29 @@ impl Component for App {
                     };
 
                     let maybe_state = get_state_from_document_string(&body_string);
-                    app_ref
-                        .link
-                        .send_self(AppMsg::ConsumeDroppedDocument(maybe_state));
+                    link.send_message(AppMsg::ConsumeDroppedDocument(maybe_state));
                 };
 
-                reader_clone.add_event_listener(reader_callback);
+                let cb = Closure::wrap(
+                    Box::new(reader_callback) as Box<dyn FnMut(_)>
+                );
+                reader_clone.add_event_listener_with_callback("loadend", cb.as_ref().unchecked_ref());
+                // leak this callback (drop the closure object without destorying the js closure)
+                // TODO: this should be bound to the FileReader and dismissed after the callback is called?
+                //
+                // Not sure how to do that though.
+                cb.forget();
 
                 return false;
             }
             AppMsg::ConsumeDroppedDocument(maybe_doc) => match maybe_doc {
                 Ok(doc) => {
-                    self.console.log("Consume Drop Document");
+                    log!("Consume Drop Document");
                     self.diagram = doc.diagram;
                     self.style = doc.style;
                 }
                 Err(err_message) => {
-                    self.console.log("Fail to consume dropped document");
+                    log!("Fail to consume dropped document");
                     self.error_toasts.push(ErrorToast {
                         title: String::from("Error Parsing dropped document"),
                         body: err_message,
@@ -317,41 +295,36 @@ impl Component for App {
                     self.error_toasts.remove(idx);
                 }
             }
-            AppMsg::DoNothing => {
-                return false;
-            }
         }
         true
     }
-}
 
-impl Renderable<App> for App {
-    fn view(&self) -> Html<Self> {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let background_style = format!("background-color: {}", self.style.color.background_color);
 
         let path_styles = self.diagram.paths.iter().enumerate().map(|(index, path)| {
             html! {
-                <TextPathStyleEditor:
-                    header={format!{"\"{}\"", path.text}},
-                    style={path.style.clone()},
-                    on_zero_dot_updated=move |dot| AppMsg::UpdatePathZeroDotStyle(index, dot),
-                    on_one_dot_updated=move |dot| AppMsg::UpdatePathOneDotStyle(index, dot),
-                    on_arc_style_updated=move |arc| AppMsg::UpdatePathArcStyle(index, arc),
+                <TextPathStyleEditor
+                    header={format!{"\"{}\"", path.text}}
+                    style={path.style.clone()}
+                    on_zero_dot_updated={ctx.link().callback(|dot| AppMsg::UpdatePathZeroDotStyle(index, dot))}
+                    on_one_dot_updated={ctx.link().callback(|dot| AppMsg::UpdatePathOneDotStyle(index, dot))}
+                    on_arc_style_updated={ctx.link().callback(|arc| AppMsg::UpdatePathArcStyle(index, arc))}
 
-                    on_add_one_dot_override=move |_| AppMsg::InitPathOneDotStyle(index),
-                    on_add_zero_dot_override=move |_| AppMsg::InitPathZeroDotStyle(index),
-                    on_add_arc_style_override=move |_| AppMsg::InitPathArcStyle(index),
-                    can_remove={true},
+                    on_add_one_dot_override={ctx.link().callback(|_| AppMsg::InitPathOneDotStyle(index))}
+                    on_add_zero_dot_override={ctx.link().callback(|_| AppMsg::InitPathZeroDotStyle(index))}
+                    on_add_arc_style_override={ctx.link().callback(|_| AppMsg::InitPathArcStyle(index))}
+                    can_remove={true}
                     />
             }
         });
 
         let toasts = self.error_toasts.iter().enumerate().map(|(index, toast)| {
             html! {
-                <div class="error-toast",>
-                    <span class="error-toast-title",>{toast.title.clone()}</span>
-                    <span class="error-toast-body",>{toast.body.clone()}</span>
-                    <button class="error-toast-dismiss-button", onclick=|_| AppMsg::DismissErrorToast(index),>
+                <div class="error-toast">
+                    <span class="error-toast-title">{toast.title.clone()}</span>
+                    <span class="error-toast-body">{toast.body.clone()}</span>
+                    <button class="error-toast-dismiss-button" onclick={ctx.link().callback(|_| AppMsg::DismissErrorToast(index))}>
                         {"x"}
                     </button>
                 </div>
@@ -362,44 +335,44 @@ impl Renderable<App> for App {
 
         return html! {
             <>
-                <link rel="stylesheet", type="text/css", href="./style.css", />
-                <div class="error-toast-container",>
+                <link rel="stylesheet" type="text/css" href="./style.css" />
+                <div class="error-toast-container">
                     {for toasts}
                 </div>
-                <div class="app-split",
-                     style=background_style,
-                     ondragover=|e| {e.prevent_default(); AppMsg::DoNothing},
-                     ondrop=|e| {e.prevent_default(); AppMsg::TryDropDocument(e.data_transfer().unwrap())},
+                <div class="app-split"
+                     style={background_style}
+                     ondragover={|e: DragEvent| e.prevent_default()}
+                     ondrop={ctx.link().callback(|e: DragEvent| {e.prevent_default(); AppMsg::TryDropDocument(e.data_transfer().unwrap())})}
                      >
                     {svg_view(&self.diagram, &self.style)}
-                    <div class="control-bar",>
-                        <section class="fields-container",>
+                    <div class="control-bar">
+                        <section class="fields-container">
                             <textarea
-                                class="control-textarea",
-                                oninput=|e| AppMsg::UpdateDiagramText(e.value),>
+                                class="control-textarea"
+                                oninput={ctx.link().callback(|e: InputEvent| AppMsg::UpdateDiagramText(e.data().unwrap_or("".to_string())))}>
                                 {App::get_paths_as_multiline_text(
                                     &self.diagram.paths,
                                 )}
                             </textarea>
-                            <TextPathStyleEditor:
-                                header="Defaults",
+                            <TextPathStyleEditor
+                                header="Defaults"
                                 style={TextPathStyle {
                                     one_dot_style: Some(self.style.default_one_dot_style.clone()),
                                     zero_dot_style: Some(self.style.default_zero_dot_style.clone()),
                                     arc_style: Some(self.style.default_arc_style.clone()),
-                                }},
-                                on_zero_dot_updated=|dot| AppMsg::UpdateDefaultZeroDotStyle(dot),
-                                on_one_dot_updated=|dot| AppMsg::UpdateDefaultOneDotStyle(dot),
-                                on_arc_style_updated=|arc| AppMsg::UpdateDefaultArcStyle(arc),
+                                }}
+                                on_zero_dot_updated={ctx.link().callback(|dot| AppMsg::UpdateDefaultZeroDotStyle(dot))}
+                                on_one_dot_updated={ctx.link().callback(|dot| AppMsg::UpdateDefaultOneDotStyle(dot))}
+                                on_arc_style_updated={ctx.link().callback(|arc| AppMsg::UpdateDefaultArcStyle(arc))}
                                 />
-                            <hr class="controls-divider", />
+                            <hr class="controls-divider" />
                             {for path_styles}
                             </section>
-                        <section class="download-container",>
+                        <section class="download-container">
                             <a
-                                class="download-button",
-                                download="radial-dots.svg",
-                                href={data_href},
+                                class="download-button"
+                                download="radial-dots.svg"
+                                href={data_href}
                                 >
                                 {"Download"}
                             </a>

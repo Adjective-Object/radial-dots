@@ -2,7 +2,7 @@ use crate::components::float_field_set::FloatFieldSet;
 use crate::components::svg_view::svg_view;
 use crate::drawing_style::DrawingColors;
 use crate::fig::dot::Dot;
-use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRender};
+use yew::prelude::*;
 
 pub struct DotEditor {
     pub dot: Dot,
@@ -10,7 +10,7 @@ pub struct DotEditor {
     pub color_style: DrawingColors,
 }
 
-#[derive(Default, PartialEq, Clone)]
+#[derive(Default, PartialEq, Clone, Properties)]
 pub struct DotEditorProps {
     pub dot: Dot,
     // TODO I'm only wrapping this in option because Callback
@@ -29,7 +29,8 @@ impl Component for DotEditor {
     type Message = DotEditorMsg;
     type Properties = DotEditorProps;
 
-    fn create(props: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let props = ctx.props();
         DotEditor {
             dot: props.dot,
             on_updated: match props.on_updated {
@@ -40,7 +41,7 @@ impl Component for DotEditor {
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             DotEditorMsg::RingRadiusChange(v) => self.on_updated.emit(Dot {
                 ring_radius: v,
@@ -62,7 +63,7 @@ impl Component for DotEditor {
         false // update given in onChange in parent state
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
+    fn changed(&mut self, _ctx: &Context<Self>, props: &Self::Properties) -> bool {
         let should_render = props.dot != self.dot || props.color_style != self.color_style;
         self.dot = props.dot;
         self.on_updated = match props.on_updated {
@@ -73,33 +74,32 @@ impl Component for DotEditor {
 
         return should_render;
     }
-}
 
-impl Renderable<DotEditor> for DotEditor {
-    fn view(&self) -> Html<Self> {
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let link = ctx.link();
         return html! {
-            <form class="dot-editor fieldset",>
-                <span class="fields",>
-                    <FloatFieldSet:
-                        human_name="Circle Radius",
-                        input_name="circle_radius",
-                        value={self.dot.circle_radius},
-                        max={10.0},
-                        on_input=|new_val| DotEditorMsg::CircleRadiusChange(new_val),
+            <form class="dot-editor fieldset">
+                <span class="fields">
+                    <FloatFieldSet
+                        human_name="Circle Radius"
+                        input_name="circle_radius"
+                        value={self.dot.circle_radius}
+                        max={10.0}
+                        on_input={link.callback(|new_val| DotEditorMsg::CircleRadiusChange(new_val))}
                     />
-                    <FloatFieldSet:
-                        human_name="Ring Radius",
-                        input_name="ring_radius",
-                        value={self.dot.ring_radius},
-                        max={10.0},
-                        on_input=|new_val| DotEditorMsg::RingRadiusChange(new_val),
+                    <FloatFieldSet
+                        human_name="Ring Radius"
+                        input_name="ring_radius"
+                        value={self.dot.ring_radius}
+                        max={10.0}
+                        on_input={link.callback(|new_val| DotEditorMsg::RingRadiusChange(new_val))}
                     />
-                    <FloatFieldSet:
-                        human_name="Ring Stoke Width",
-                        input_name="ring_stroke_width",
-                        value={self.dot.ring_stroke_width},
-                        max={5.0},
-                        on_input=|new_val| DotEditorMsg::RingStrokeWidthChange(new_val),
+                    <FloatFieldSet
+                        human_name="Ring Stoke Width"
+                        input_name="ring_stroke_width"
+                        value={self.dot.ring_stroke_width}
+                        max={5.0}
+                        on_input={link.callback(|new_val| DotEditorMsg::RingStrokeWidthChange(new_val))}
                     />
                 </span>
                 {svg_view(&self.dot, &"#EEEEEE" )}

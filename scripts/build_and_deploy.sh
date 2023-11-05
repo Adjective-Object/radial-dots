@@ -2,7 +2,7 @@
 
 set -x
 
-INITIAL_DIR=$(realpath $(dirname $0)/..)
+INITIAL_DIR="$(realpath "$(dirname "$0")/..")"
 
 # TODO: cargo-web is deprecated. Use trunk build here instead
 trunk build --release
@@ -15,15 +15,15 @@ wasm-opt -Oz \
 mv ./dist/radial_dots_compressed.wasm ./dist/radial_dots.wasm
 du -h ./dist/radial_dots.wasm
 
-if [ -z "$(git status --porcelain)" ]; then 
+if [[ -z "$(git status --porcelain)" ]]; then
     echo "working clean. deploying"
 
-    cd $(mktemp -d)
+    cd "$(mktemp -d)" || exit 1
 
     git init
     git remote add origin git@github.com:Adjective-Object/radial-dots-yew.git
     git checkout -b gh-pages
-    cp "$INITIAL_DIR"/dist/* .
+    cp "${INITIAL_DIR}"/dist/* .
     git add .
     git commit -m "auto build"
     git status

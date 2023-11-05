@@ -1,7 +1,7 @@
 use crate::components::float_field_set::FloatFieldSet;
 use crate::components::svg_view::svg_view;
 use crate::fig::text_path::{ArcPreviewStyle, ArcStyle};
-use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRender};
+use yew::prelude::*;
 
 #[derive(PartialEq)]
 pub struct ArcStyleEditor {
@@ -9,7 +9,7 @@ pub struct ArcStyleEditor {
     pub on_updated: Callback<ArcStyle>,
 }
 
-#[derive(Default, PartialEq, Clone)]
+#[derive(Default, PartialEq, Clone, Properties)]
 pub struct ArcStyleEditorProps {
     pub arc_style: ArcStyle,
     // TODO I'm only wrapping this in option because Callback
@@ -27,17 +27,18 @@ impl Component for ArcStyleEditor {
     type Message = ArcStyleEditorMsg;
     type Properties = ArcStyleEditorProps;
 
-    fn create(props: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let props = ctx.props();
         ArcStyleEditor {
             arc_style: props.arc_style,
             on_updated: match props.on_updated {
                 Some(x) => x,
                 None => panic!("on_updated must be specified"),
-            },
+            }
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             ArcStyleEditorMsg::UpdateRadius(v) => self.on_updated.emit(ArcStyle {
                 radius: v,
@@ -59,7 +60,7 @@ impl Component for ArcStyleEditor {
         false // update given in onChange in parent state
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
+    fn changed(&mut self, context: &Context<Self>, props: &Self::Properties) -> bool {
         let should_render = props.arc_style != self.arc_style;
         self.arc_style = props.arc_style;
         self.on_updated = match props.on_updated {
@@ -69,33 +70,34 @@ impl Component for ArcStyleEditor {
 
         return should_render;
     }
-}
 
-impl Renderable<ArcStyleEditor> for ArcStyleEditor {
-    fn view(&self) -> Html<Self> {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         return html! {
-            <form class="arc-style-editor fieldset",>
-                <span class="fields",>
-                    <FloatFieldSet:
-                        human_name="Radius",
-                        input_name="arc-radius",
-                        value={self.arc_style.radius},
-                        max={50.0},
-                        on_input=|new_val| ArcStyleEditorMsg::UpdateRadius(new_val),
+            <form class="arc-style-editor fieldset">
+                <span class="fields">
+                    <FloatFieldSet
+                        human_name="Radius"
+                        input_name="arc-radius"
+                        value={self.arc_style.radius}
+                        max={50.0}
+                        on_input={ctx.link().callback(
+                            |new_val| ArcStyleEditorMsg::UpdateRadius(new_val))}
                     />
-                    <FloatFieldSet:
-                        human_name="Arc Span",
-                        input_name="arc-span",
-                        value={self.arc_style.arc_percentage},
-                        max={1.0},
-                        on_input=|new_val| ArcStyleEditorMsg::UpdateArcPercentage(new_val),
+                    <FloatFieldSet
+                        human_name="Arc Span"
+                        input_name="arc-span"
+                        value={self.arc_style.arc_percentage}
+                        max={1.0}
+                        on_input={ctx.link().callback(
+                            |new_val| ArcStyleEditorMsg::UpdateArcPercentage(new_val))}
                     />
-                    <FloatFieldSet:
-                        human_name="Arc Offset",
-                        input_name="arc-offset",
-                        value={self.arc_style.arc_offset_percentage},
-                        max={1.0},
-                        on_input=|new_val| ArcStyleEditorMsg::UpdateArcOffsetPercentage(new_val),
+                    <FloatFieldSet
+                        human_name="Arc Offset"
+                        input_name="arc-offset"
+                        value={self.arc_style.arc_offset_percentage}
+                        max={1.0}
+                        on_input={ctx.link().callback(
+                            |new_val| ArcStyleEditorMsg::UpdateArcOffsetPercentage(new_val))}
                     />
                 </span>
                 {svg_view(&self.arc_style, &ArcPreviewStyle {

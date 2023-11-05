@@ -1,8 +1,8 @@
-use crate::components::{arc_style_editor::ArcStyleEditor, dot_editor::DotEditor};
+use crate::components::{dot_editor::DotEditor, arc_style_editor::ArcStyleEditor};
 use crate::drawing_style::DrawingColors;
 use crate::fig::dot::Dot;
 use crate::fig::text_path::{ArcStyle, TextPathStyle};
-use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRender};
+use yew::prelude::*;
 
 pub struct TextPathStyleEditor {
     pub style: TextPathStyle,
@@ -19,7 +19,7 @@ pub struct TextPathStyleEditor {
     pub collapsed: bool,
 }
 
-#[derive(Default, PartialEq, Clone)]
+#[derive(Default, PartialEq, Clone, Properties)]
 pub struct TextPathStyleEditorProps {
     pub style: TextPathStyle,
     pub header: String,
@@ -28,10 +28,14 @@ pub struct TextPathStyleEditorProps {
     pub on_zero_dot_updated: Option<Callback<Option<Dot>>>,
     pub on_arc_style_updated: Option<Callback<Option<ArcStyle>>>,
 
+    #[prop_or(None)]
     pub on_add_one_dot_override: Option<Callback<()>>,
+    #[prop_or(None)]
     pub on_add_zero_dot_override: Option<Callback<()>>,
+    #[prop_or(None)]
     pub on_add_arc_style_override: Option<Callback<()>>,
 
+    #[prop_or(false)]
     pub can_remove: bool,
 }
 
@@ -50,11 +54,12 @@ impl Component for TextPathStyleEditor {
     type Message = TextPathStyleEditorMsg;
     type Properties = TextPathStyleEditorProps;
 
-    fn create(props: Self::Properties, _: ComponentLink<Self>) -> Self {
-        TextPathStyleEditor {
+    fn create(ctx: &Context<Self>) -> Self {
+        let props = ctx.props();
+        return Self{
             style: props.style,
             header: props.header,
-
+            collapsed: false,
             on_one_dot_updated: match props.on_one_dot_updated {
                 Some(x) => x,
                 None => panic!("on_one_dot_updated must be specified"),
@@ -67,17 +72,14 @@ impl Component for TextPathStyleEditor {
                 Some(x) => x,
                 None => panic!("on_arc_style_updated must be specified"),
             },
-
-            collapsed: false,
-
-            on_add_one_dot_override: props.on_add_one_dot_override,
-            on_add_zero_dot_override: props.on_add_zero_dot_override,
-            on_add_arc_style_override: props.on_add_arc_style_override,
+            on_add_one_dot_override : props.on_add_one_dot_override,
+            on_add_zero_dot_override : props.on_add_zero_dot_override,
+            on_add_arc_style_override : props.on_add_arc_style_override,
             can_remove: props.can_remove,
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             TextPathStyleEditorMsg::OneDotUpdated(dot) => self.on_one_dot_updated.emit(dot),
             TextPathStyleEditorMsg::ZeroDotUpdated(dot) => self.on_zero_dot_updated.emit(dot),
@@ -105,7 +107,7 @@ impl Component for TextPathStyleEditor {
         false // update given in onChange in parent state
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
+    fn changed(&mut self, _ctx: &Context<Self>, props: &Self::Properties) -> bool {
         let should_render = props.style != self.style
             || props.header != self.header
             || props.can_remove != self.can_remove;
@@ -134,15 +136,16 @@ impl Component for TextPathStyleEditor {
 
         return should_render;
     }
-}
 
-impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
-    fn view(&self) -> Html<Self> {
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let link = ctx.link();
         let zero_dot_dom = match &self.style.zero_dot_style {
             Some(dot) => html! {<section>
                 {if self.can_remove {
                     html!{
-                        <button class="remove-override", onclick=|_| TextPathStyleEditorMsg::ZeroDotUpdated(None), >
+                        <button
+                            class="remove-override"
+                            onclick={link.callback(|_| TextPathStyleEditorMsg::ZeroDotUpdated(None))}>
                             {"x"}
                         </button>
                     }
@@ -152,21 +155,21 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
                     }
                 }}
                 <h3>{"Zero Dot"}</h3>
-                <DotEditor:
-                    dot={dot.clone()},
-                    on_updated=|new_dot| TextPathStyleEditorMsg::ZeroDotUpdated(Some(new_dot)),
+                <DotEditor
+                    dot={dot.clone()}
+                    on_updated={ctx.link().callback(|new_dot| TextPathStyleEditorMsg::ZeroDotUpdated(Some(new_dot)))}
                     color_style={DrawingColors {
                         stroke_color: "#333333".to_string(),
-                        background_color: "#EEEEEE".to_string(),
-                    }},
+                        background_color: "#EEEEEE".to_string()
+                    }}
                     />
                 </section>
             },
             _ => {
                 html! {
                     <button
-                        class="add-override-fallback",
-                        onclick=|_| TextPathStyleEditorMsg::OnAddZeroDot,
+                        class="add-override-fallback"
+                        onclick={link.callback(|_| TextPathStyleEditorMsg::OnAddZeroDot)}
                         >
                         {"⊕ override [0] dot"}
                     </button>
@@ -178,7 +181,9 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
             Some(dot) => html! {<section>
                 {if self.can_remove {
                     html!{
-                        <button class="remove-override", onclick=|_| TextPathStyleEditorMsg::OneDotUpdated(None), >
+                        <button
+                            class="remove-override"
+                            onclick={link.callback(|_| TextPathStyleEditorMsg::OneDotUpdated(None))}>
                             {"x"}
                         </button>
                     }
@@ -188,21 +193,21 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
                     }
                 }}
                 <h3>{"One Dot"}</h3>
-                <DotEditor:
-                    dot={dot.clone()},
-                    on_updated=|new_dot| TextPathStyleEditorMsg::OneDotUpdated(Some(new_dot)),
+                <DotEditor
+                    dot={dot.clone()}
+                    on_updated={ctx.link().callback(|new_dot| TextPathStyleEditorMsg::OneDotUpdated(Some(new_dot)))}
                     color_style={DrawingColors {
                         stroke_color: "#333333".to_string(),
                         background_color: "#EEEEEE".to_string(),
-                    }},
+                    }}
                     />
                 </section>
             },
             _ => {
                 html! {
                     <button
-                        class="add-override-fallback",
-                        onclick=|_| TextPathStyleEditorMsg::OnAddOneDot,
+                        class="add-override-fallback"
+                        onclick={link.callback(|_| TextPathStyleEditorMsg::OnAddOneDot)}
                         >
                         {"⊕ override [1] dot "}
                     </button>
@@ -214,7 +219,7 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
             Some(arc) => html! {<section>
                 {if self.can_remove {
                     html!{
-                        <button class="remove-override", onclick=|_| TextPathStyleEditorMsg::ArcStyleUpdated(None), >
+                        <button class="remove-override" onclick={link.callback(|_| TextPathStyleEditorMsg::ArcStyleUpdated(None))}>
                             {"x"}
                         </button>
                     }
@@ -224,17 +229,17 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
                     }
                 }}
                 <h3>{"Arc Style"}</h3>
-                <ArcStyleEditor:
-                    arc_style={arc.clone()},
-                    on_updated=|new_arc| TextPathStyleEditorMsg::ArcStyleUpdated(Some(new_arc)),
+                <ArcStyleEditor
+                    arc_style={arc.clone()}
+                    on_updated={ctx.link().callback(|new_arc| TextPathStyleEditorMsg::ArcStyleUpdated(Some(new_arc)))}
                     />
                 </section>
             },
             _ => {
                 html! {
                     <button
-                        class="add-override-fallback",
-                        onclick=|_| TextPathStyleEditorMsg::OnAddArcStyle,
+                        class="add-override-fallback"
+                        onclick={link.callback(|_| TextPathStyleEditorMsg::OnAddArcStyle)}
                         >
                         {"⊕ override arc style"}
                     </button>
@@ -243,11 +248,13 @@ impl Renderable<TextPathStyleEditor> for TextPathStyleEditor {
         };
 
         return html! {
-            <section class="text-path-style-editor",>
-                <button class="toggle-collapsed", onclick=|_| TextPathStyleEditorMsg::ToggleCollapsed, >
+            <section class="text-path-style-editor">
+                <button
+                    class="toggle-collapsed"
+                    onclick={link.callback(|_| TextPathStyleEditorMsg::ToggleCollapsed)}>
                     {if self.collapsed {"▼"} else {"▲"}}
                 </button>
-                <h2 class="text-path-header",>{&self.header}</h2>
+                <h2 class="text-path-header">{&self.header}</h2>
                 {if self.collapsed {
                     html!{<></>}
                 } else {html!{

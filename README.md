@@ -8,14 +8,14 @@ Built with [yew framework](https://github.com/DenisKolodin/yew)
 
 installing
 
-```
+```bash
 rustup target add wasm32-unknown-unknown
 cargo install --locked trunk
 ```
 
 dev server
 
-```
+```bash
 trunk serve
 ```
 
@@ -23,6 +23,6 @@ go to localhost:8000
 
 ## Deploying (gh pages)
 
-```
+```bash
 ./scripts/build_and_deploy.sh
 ```

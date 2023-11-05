@@ -1,4 +1,4 @@
-use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRender};
+use yew::prelude::*;
 
 pub struct FloatFieldSet {
     human_name: String,
@@ -8,7 +8,7 @@ pub struct FloatFieldSet {
     on_input: Callback<f64>,
 }
 
-#[derive(Default, PartialEq, Clone)]
+#[derive(Default, PartialEq, Clone, Properties)]
 pub struct FloatFieldSetProps {
     pub human_name: String,
     pub input_name: String,
@@ -25,7 +25,8 @@ impl Component for FloatFieldSet {
     type Message = FloatFieldSetMessage;
     type Properties = FloatFieldSetProps;
 
-    fn create(props: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let props = ctx.props();
         FloatFieldSet {
             human_name: props.human_name,
             input_name: props.input_name,
@@ -38,7 +39,7 @@ impl Component for FloatFieldSet {
         }
     }
 
-    fn change(&mut self, props: Self::Properties) -> bool {
+    fn changed(&mut self, ctx: &Context<Self>, props: &FloatFieldSetProps) -> bool {
         let should_change = self.human_name != props.human_name
             || self.input_name != props.input_name
             || self.value != props.value
@@ -55,7 +56,7 @@ impl Component for FloatFieldSet {
         return should_change;
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             FloatFieldSetMessage::Changed(v) => {
                 self.on_input.emit(v);
@@ -64,30 +65,32 @@ impl Component for FloatFieldSet {
 
         false
     }
-}
 
-impl Renderable<FloatFieldSet> for FloatFieldSet {
-    fn view(&self) -> Html<FloatFieldSet> {
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let cb = ctx.link().callback(|e: InputEvent|
+            FloatFieldSetMessage::Changed(
+                e.data().unwrap_or("".to_string()).parse().unwrap_or(0.0)));
+
         return html! {
             <>
                 <label>{&self.human_name}</label>
                 <input
-                    name={&self.input_name},
-                    type="range",
-                    min="0.0",
-                    max={self.max},
-                    value={self.value},
-                    step={self.max/500.0},
-                    oninput=|e| FloatFieldSetMessage::Changed(e.value.parse().unwrap()),
+                    name={self.input_name}
+                    type="range"
+                    min="0.0"
+                    max={self.max.to_string()}
+                    value={self.value.to_string()}
+                    step={(self.max/500.0).to_string()}
+                    oninput={cb}
                     />
                 <input
-                    name={&self.input_name},
-                    type="number",
-                    min="0.0",
-                    max={self.max},
-                    value={self.value},
-                    step={self.max/500.0},
-                    oninput=|e| FloatFieldSetMessage::Changed(e.value.parse().unwrap()),
+                    name={self.input_name}
+                    type="number"
+                    min="0.0"
+                    max={self.max.to_string()}
+                    value={self.value.to_string()}
+                    step={(self.max/500.0).to_string()}
+                    oninput={cb}
                     />
             </>
         };

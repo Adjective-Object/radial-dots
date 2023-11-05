@@ -1,6 +1,5 @@
 use crate::svg::svg_drawable::SvgRenderer;
-
-use yew::{html, Html};
+use yew::prelude::*;
 
 pub fn svg_data_url<
     TStyle,
@@ -18,16 +17,15 @@ pub fn svg_data_url<
 }
 
 pub fn svg_view<
-T: yew::html::Component,
     TStyle,
     TRenderer: SvgRenderer<TStyle>,
 >(
     svg_renderer: &TRenderer,
     style: &TStyle,
-) -> Html<T> {
+) -> Html {
     let img_base64_src = svg_data_url(svg_renderer, style);
 
     return html! {
-        <img class="preview-image", src=img_base64_src, />
+        <img class="preview-image" src={img_base64_src} />
     };
 }
