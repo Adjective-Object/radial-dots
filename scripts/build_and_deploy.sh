@@ -4,17 +4,17 @@ set -x
 
 INITIAL_DIR=$(realpath $(dirname $0)/..)
 
-cargo-web deploy --release
-du -h ./target/deploy/radial_dots.wasm
+# TODO: cargo-web is deprecated. Use trunk build here instead
+trunk build --release
+du -h ./dist/radial_dots.wasm
 
 wasm-opt -Oz \
-    -o ./target/deploy/radial_dots_compressed.wasm \
-    ./target/deploy/radial_dots.wasm
+    -o ./dist/radial_dots_compressed.wasm \
+    ./dist/radial_dots.wasm
 
-mv ./target/deploy/radial_dots_compressed.wasm ./target/deploy/radial_dots.wasm
-du -h ./target/deploy/radial_dots.wasm
+mv ./dist/radial_dots_compressed.wasm ./dist/radial_dots.wasm
+du -h ./dist/radial_dots.wasm
 
-!/usr/bin/env bash
 if [ -z "$(git status --porcelain)" ]; then 
     echo "working clean. deploying"
 
@@ -23,7 +23,7 @@ if [ -z "$(git status --porcelain)" ]; then
     git init
     git remote add origin git@github.com:Adjective-Object/radial-dots-yew.git
     git checkout -b gh-pages
-    cp "$INITIAL_DIR"/target/deploy/* .
+    cp "$INITIAL_DIR"/dist/* .
     git add .
     git commit -m "auto build"
     git status

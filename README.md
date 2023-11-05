@@ -9,15 +9,14 @@ Built with [yew framework](https://github.com/DenisKolodin/yew)
 installing
 
 ```
-rustup install nightly-2019-05-04
-rustup default nightly-2019-03-22
-cargo install cargo-web
+rustup target add wasm32-unknown-unknown
+cargo install --locked trunk
 ```
 
 dev server
 
 ```
-cargo web start
+trunk serve
 ```
 
 go to localhost:8000

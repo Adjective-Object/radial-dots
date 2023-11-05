@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 stdweb = {version = "0.4.17", features = ["futures-support"]}
-yew = "0.6.0"
+yew = { version = "0.21.0", features = ["csr"]}
 base64 = "0.10.1"
 wee_alloc = "0.4.4"
 serde = {version = "1.0.90", features = ["derive"]}
