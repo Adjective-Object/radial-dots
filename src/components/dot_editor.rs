@@ -6,7 +6,7 @@ use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRend
 
 pub struct DotEditor {
     pub dot: Dot,
-    pub on_updated: Callback<(Dot)>,
+    pub on_updated: Callback<Dot>,
     pub color_style: DrawingColors,
 }
 
@@ -15,7 +15,7 @@ pub struct DotEditorProps {
     pub dot: Dot,
     // TODO I'm only wrapping this in option because Callback
     // doesn't derive Default, but Option<Callback> does.
-    pub on_updated: Option<Callback<(Dot)>>,
+    pub on_updated: Option<Callback<Dot>>,
     pub color_style: DrawingColors,
 }
 

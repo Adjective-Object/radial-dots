@@ -6,7 +6,7 @@ use yew::{html, Callback, Component, ComponentLink, Html, Renderable, ShouldRend
 #[derive(PartialEq)]
 pub struct ArcStyleEditor {
     pub arc_style: ArcStyle,
-    pub on_updated: Callback<(ArcStyle)>,
+    pub on_updated: Callback<ArcStyle>,
 }
 
 #[derive(Default, PartialEq, Clone)]
@@ -14,7 +14,7 @@ pub struct ArcStyleEditorProps {
     pub arc_style: ArcStyle,
     // TODO I'm only wrapping this in option because Callback
     // doesn't derive Default, but Option<Callback> does.
-    pub on_updated: Option<Callback<(ArcStyle)>>,
+    pub on_updated: Option<Callback<ArcStyle>>,
 }
 
 pub enum ArcStyleEditorMsg {
