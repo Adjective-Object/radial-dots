@@ -1,7 +1,8 @@
+use crate::log;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-pub struct FloatFieldSet {
-}
+pub struct FloatFieldSet {}
 
 #[derive(Default, PartialEq, Clone, Properties)]
 pub struct FloatFieldSetProps {
@@ -13,7 +14,7 @@ pub struct FloatFieldSetProps {
 }
 
 pub enum FloatFieldSetMessage {
-    Changed(f64),
+    Changed(String),
 }
 
 impl Component for FloatFieldSet {
@@ -28,7 +29,12 @@ impl Component for FloatFieldSet {
         match msg {
             FloatFieldSetMessage::Changed(v) => {
                 let props = ctx.props();
-                props.on_input.emit(v);
+                match v.parse::<f64>() {
+                    Ok(val) => props.on_input.emit(val),
+                    Err(e) => {
+                        log!("failed to parse {v:#?} as f64: {e}")
+                    }
+                }
             }
         };
 
@@ -37,9 +43,13 @@ impl Component for FloatFieldSet {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let props = ctx.props();
-        let cb = ctx.link().callback(|e: InputEvent|
+        let cb = ctx.link().callback(|e: InputEvent| {
             FloatFieldSetMessage::Changed(
-                e.data().unwrap_or("".to_string()).parse().unwrap_or(0.0)));
+                e.target_dyn_into::<HtmlInputElement>()
+                    .expect("target of callback should be an HtmlInputElement")
+                    .value(),
+            )
+        });
 
         return html! {
             <>
