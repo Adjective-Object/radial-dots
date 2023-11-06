@@ -15,6 +15,9 @@ pub struct App {
     style: DrawingStyle,
     diagram: Diagram,
     error_toasts: Vec<ErrorToast>,
+    // file reading is bound to the lifetime of this FileReader object, so
+    // we store the active FileReader on the app
+    active_reader: Option<gloo_file::callbacks::FileReader>,
 }
 
 pub enum AppMsg {
@@ -44,28 +47,31 @@ fn get_file_from_data_transfer(
     expected_mime: &str,
     data_transfer: DataTransfer,
 ) -> Result<File, ErrorToast> {
-    if data_transfer.items().length() != 1 {
-        log!("length not right");
+    let data_transfer_items = data_transfer.items();
+    let len = data_transfer_items.length();
+    let mut matches: Vec<DataTransferItem> = Vec::new();
+    for i in 0..len {
+        match data_transfer_items.get(i) {
+            None => break,
+            Some(it) => {
+                if it.type_() == expected_mime {
+                    matches.push(it)
+                }
+            }
+        };
+    }
+
+    if matches.len() != 1 {
         return Err(ErrorToast {
             title: String::from("Error in Drag/Drop"),
             body: format!(
-                "Found {num} Data Transfer Items, expected 1",
+                "Expected exactly 1 DataTransferItem of type {expected_mime}, but got {num}",
                 num = data_transfer.items().length()
             ),
         });
     }
 
-    let transfer_item: DataTransferItem = data_transfer.items().get(0).unwrap();
-
-    if transfer_item.type_() != expected_mime {
-        return Err(ErrorToast {
-            title: String::from("Error in Drag/Drop"),
-            body: format!(
-                "Dropped document had wrong mimetype ({mime}), expected \"{expected_mime}\"",
-                mime = transfer_item.type_()
-            ),
-        });
-    }
+    let transfer_item: DataTransferItem = matches.drain(0..).next().unwrap();
 
     if transfer_item.kind() != "file" {
         return Err(ErrorToast {
@@ -144,6 +150,7 @@ impl Component for App {
                 ],
             },
             error_toasts: Vec::new(),
+            active_reader: None,
         }
     }
 
@@ -234,30 +241,40 @@ impl Component for App {
                 };
 
                 let cb = ctx.link().callback(|msg: AppMsg| msg);
-                gloo_file::callbacks::read_as_text(&gloo_file::Blob::from(file), move |res| {
-                    match res {
+                log!(
+                    "consume with gloo {file_str:#?}",
+                    file_str = file.to_string(),
+                );
+                self.active_reader = Some(gloo_file::callbacks::read_as_text(
+                    &gloo_file::Blob::from(file),
+                    move |res| match res {
                         Ok(file_contents) => {
+                            log!("consuming dropped document content: {file_contents}");
                             cb.emit(AppMsg::ConsumeDroppedDocument(
                                 get_state_from_document_string(&file_contents),
                             ));
                         }
                         Err(read_err) => {
+                            log!("file read error!");
                             cb.emit(AppMsg::ConsumeDroppedDocument(Err(format!(
                                 "Failed to get document body from reader body: {read_err:#?}",
                             ))));
                         }
-                    }
-                });
+                    },
+                ));
                 return false;
             }
             AppMsg::ConsumeDroppedDocument(maybe_doc) => match maybe_doc {
+                // clear the file reader
                 Ok(doc) => {
                     log!("Consume Drop Document");
+                    self.active_reader = None;
                     self.diagram = doc.diagram;
                     self.style = doc.style;
                 }
                 Err(err_message) => {
                     log!("Fail to consume dropped document");
+                    self.active_reader = None;
                     self.error_toasts.push(ErrorToast {
                         title: String::from("Error Parsing dropped document"),
                         body: err_message,
