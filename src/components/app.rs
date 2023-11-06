@@ -8,7 +8,7 @@ use crate::fig::text_path::ArcStyle;
 use crate::fig::text_path::{TextPath, TextPathStyle};
 use crate::log;
 use crate::serializable_app_state::{get_state_from_document_string, DeserializedAppState};
-use web_sys::{DataTransfer, DataTransferItem, File};
+use web_sys::{DataTransfer, DataTransferItem, File, HtmlTextAreaElement};
 use yew::prelude::*;
 
 pub struct App {
@@ -29,8 +29,8 @@ pub enum AppMsg {
     InitPathZeroDotStyle(usize),
     InitPathArcStyle(usize),
 
-    UpdateBackgroundColor(String),
-    UpdateStrokeColor(String),
+    // UpdateBackgroundColor(String),
+    // UpdateStrokeColor(String),
     UpdateDiagramText(String),
 
     TryDropDocument(DataTransfer),
@@ -183,12 +183,12 @@ impl Component for App {
                 self.diagram.paths[index].style.arc_style =
                     Some(self.style.default_arc_style.clone())
             }
-            AppMsg::UpdateBackgroundColor(new_color) => {
-                self.style.color.background_color = new_color;
-            }
-            AppMsg::UpdateStrokeColor(new_color) => {
-                self.style.color.stroke_color = new_color;
-            }
+            // AppMsg::UpdateBackgroundColor(new_color) => {
+            //     self.style.color.background_color = new_color;
+            // }
+            // AppMsg::UpdateStrokeColor(new_color) => {
+            //     self.style.color.stroke_color = new_color;
+            // }
             AppMsg::UpdateDiagramText(new_text) => {
                 let mut new_text_paths: Vec<TextPath> = vec![];
                 for (i, line) in new_text.split('\n').enumerate() {
@@ -279,6 +279,7 @@ impl Component for App {
         let path_styles = self.diagram.paths.iter().enumerate().map(|(index, path)| {
             html! {
                 <TextPathStyleEditor
+                    key={index}
                     header={format!{"\"{}\"", path.text}}
                     style={path.style.clone()}
                     on_zero_dot_updated={ctx.link().callback(move |dot| AppMsg::UpdatePathZeroDotStyle(index, dot))}
@@ -306,10 +307,8 @@ impl Component for App {
         });
 
         let data_href: String = svg_data_url(&self.diagram, &self.style);
-
         return html! {
             <>
-                <link rel="stylesheet" type="text/css" href="./style.css" />
                 <div class="error-toast-container">
                     {for toasts}
                 </div>
@@ -323,11 +322,10 @@ impl Component for App {
                         <section class="fields-container">
                             <textarea
                                 class="control-textarea"
-                                oninput={ctx.link().callback(|e: InputEvent| AppMsg::UpdateDiagramText(e.data().unwrap_or("".to_string())))}>
-                                {App::get_paths_as_multiline_text(
-                                    &self.diagram.paths,
-                                )}
-                            </textarea>
+                                oninput={ctx.link().callback(|e: InputEvent| {
+                                    Self::Message::UpdateDiagramText(e.target_dyn_into::<HtmlTextAreaElement>().expect("should be right value").value())
+                                })}
+                                value={App::get_paths_as_multiline_text(&self.diagram.paths)}/>
                             <TextPathStyleEditor
                                 header="Defaults"
                                 style={TextPathStyle {
@@ -340,7 +338,13 @@ impl Component for App {
                                 on_arc_style_updated={ctx.link().callback(|arc| AppMsg::UpdateDefaultArcStyle(arc))}
                                 />
                             <hr class="controls-divider" />
-                            {for path_styles}
+                            <>
+                                // In the current version of yew, all {for elemes} should
+                                // be wrapped in a v-list to prevent them from affecting the
+                                // keying requirements of their peer nodes.
+                                // See: https://github.com/yewstack/yew/issues/3262
+                                {for path_styles}
+                            </>
                             </section>
                         <section class="download-container">
                             <a
